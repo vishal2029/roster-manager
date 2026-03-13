@@ -250,19 +250,19 @@ const BillingSheet = ({ tasks }) => {
           <thead>
             <tr style={{background: '#35694f', color: '#fff', fontSize: '0.75rem', position: 'sticky', top: 0, zIndex: 10, textAlign: 'center'}}>
               <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '60px', verticalAlign: 'middle'}}>S. No.</th>
-              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', minWidth: '150px', verticalAlign: 'middle', textAlign: 'left'}}>Task Name (Task ID)</th>
-              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', minWidth: '250px', verticalAlign: 'middle', textAlign: 'left'}}>Task Name / Subtask Name</th>
-              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '100px', verticalAlign: 'middle'}}>Report (words)</th>
-              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '90px', verticalAlign: 'middle'}}>PPT (words)</th>
-              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '120px', verticalAlign: 'middle'}}>Code Eq. Words</th>
-              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '120px', verticalAlign: 'middle'}}>Changes - Report</th>
-              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '120px', verticalAlign: 'middle'}}>Changes - PPT</th>
-              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '120px', verticalAlign: 'middle'}}>Changes - Code</th>
-              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '130px', verticalAlign: 'middle'}}>Dup - Report</th>
-              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '130px', verticalAlign: 'middle'}}>Dup - PPT</th>
-              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '130px', verticalAlign: 'middle'}}>Dup - Code</th>
-              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '100px', verticalAlign: 'middle'}}>TOTAL Words</th>
-              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '80px', verticalAlign: 'middle'}}>PPW</th>
+              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', minWidth: '150px', verticalAlign: 'middle', textAlign: 'left'}}>Task Name (ID)</th>
+              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', minWidth: '250px', verticalAlign: 'middle', textAlign: 'left'}}>Title/Subtask</th>
+              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '90px', verticalAlign: 'middle'}}>Report</th>
+              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '90px', verticalAlign: 'middle'}}>PPT</th>
+              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '100px', verticalAlign: 'middle'}}>Code Eq.</th>
+              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '100px', verticalAlign: 'middle'}}>Chg - Rep</th>
+              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '100px', verticalAlign: 'middle'}}>Chg - PPT</th>
+              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '100px', verticalAlign: 'middle'}}>Chg - Code</th>
+              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '100px', verticalAlign: 'middle'}}>Dup - Rep</th>
+              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '100px', verticalAlign: 'middle'}}>Dup - PPT</th>
+              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '100px', verticalAlign: 'middle'}}>Dup - Code</th>
+              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '100px', verticalAlign: 'middle'}}>TOTAL</th>
+              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '70px', verticalAlign: 'middle'}}>PPW</th>
               <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '100px', verticalAlign: 'middle'}}>Amount</th>
             </tr>
           </thead>
@@ -303,28 +303,28 @@ const BillingSheet = ({ tasks }) => {
                       <td style={{padding: '0.75rem', border: '1px solid var(--border-color)', textAlign: 'center'}}>{row.format === 'PPT' ? row.wordCount : 0}</td>
                       <td style={{padding: '0.75rem', border: '1px solid var(--border-color)', textAlign: 'center'}}>{row.format === 'Code' ? row.wordCount : 0}</td>
                       
-                      <td style={{padding: '0', border: '1px solid var(--border-color)', backgroundColor: 'var(--panel-hover)'}}>
+                      <td data-value={bd.changesReport || 0} style={{padding: '0', border: '1px solid var(--border-color)', backgroundColor: 'var(--panel-hover)'}}>
                         <input type="number" onFocus={(e) => e.target.style.background='var(--bg-color)'} onBlur={(e) => e.target.style.background='transparent'} style={inputStyle} value={bd.changesReport || ''} onChange={(e) => handleBillingChange(row.rowId, 'changesReport', e.target.value)} />
                       </td>
-                      <td style={{padding: '0', border: '1px solid var(--border-color)', backgroundColor: 'var(--panel-hover)'}}>
+                      <td data-value={bd.changesPPT || 0} style={{padding: '0', border: '1px solid var(--border-color)', backgroundColor: 'var(--panel-hover)'}}>
                         <input type="number" onFocus={(e) => e.target.style.background='var(--bg-color)'} onBlur={(e) => e.target.style.background='transparent'} style={inputStyle} value={bd.changesPPT || ''} onChange={(e) => handleBillingChange(row.rowId, 'changesPPT', e.target.value)} />
                       </td>
-                      <td style={{padding: '0', border: '1px solid var(--border-color)', backgroundColor: 'var(--panel-hover)'}}>
+                      <td data-value={bd.changesCode || 0} style={{padding: '0', border: '1px solid var(--border-color)', backgroundColor: 'var(--panel-hover)'}}>
                         <input type="number" onFocus={(e) => e.target.style.background='var(--bg-color)'} onBlur={(e) => e.target.style.background='transparent'} style={inputStyle} value={bd.changesCode || ''} onChange={(e) => handleBillingChange(row.rowId, 'changesCode', e.target.value)} />
                       </td>
 
-                      <td style={{padding: '0', border: '1px solid var(--border-color)', backgroundColor: 'var(--panel-hover)'}}>
+                      <td data-value={bd.dupReport || 0} style={{padding: '0', border: '1px solid var(--border-color)', backgroundColor: 'var(--panel-hover)'}}>
                         <input type="number" onFocus={(e) => e.target.style.background='var(--bg-color)'} onBlur={(e) => e.target.style.background='transparent'} style={inputStyle} value={bd.dupReport || ''} onChange={(e) => handleBillingChange(row.rowId, 'dupReport', e.target.value)} />
                       </td>
-                      <td style={{padding: '0', border: '1px solid var(--border-color)', backgroundColor: 'var(--panel-hover)'}}>
+                      <td data-value={bd.dupPPT || 0} style={{padding: '0', border: '1px solid var(--border-color)', backgroundColor: 'var(--panel-hover)'}}>
                         <input type="number" onFocus={(e) => e.target.style.background='var(--bg-color)'} onBlur={(e) => e.target.style.background='transparent'} style={inputStyle} value={bd.dupPPT || ''} onChange={(e) => handleBillingChange(row.rowId, 'dupPPT', e.target.value)} />
                       </td>
-                      <td style={{padding: '0', border: '1px solid var(--border-color)', backgroundColor: 'var(--panel-hover)'}}>
+                      <td data-value={bd.dupCode || 0} style={{padding: '0', border: '1px solid var(--border-color)', backgroundColor: 'var(--panel-hover)'}}>
                         <input type="number" onFocus={(e) => e.target.style.background='var(--bg-color)'} onBlur={(e) => e.target.style.background='transparent'} style={inputStyle} value={bd.dupCode || ''} onChange={(e) => handleBillingChange(row.rowId, 'dupCode', e.target.value)} />
                       </td>
 
                       <td style={{padding: '0.75rem', border: '1px solid var(--border-color)', textAlign: 'center', fontWeight: 'bold'}}>{totalWords}</td>
-                      <td style={{padding: '0', border: '1px solid var(--border-color)'}}>
+                      <td data-value={ppw} style={{padding: '0', border: '1px solid var(--border-color)'}}>
                         <input type="number" step="0.01" onFocus={(e) => e.target.style.background='var(--panel-hover)'} onBlur={(e) => e.target.style.background='transparent'} style={inputStyle} value={ppw} onChange={(e) => handleBillingChange(row.rowId, 'ppw', e.target.value)} />
                       </td>
                       <td style={{padding: '0.75rem', border: '1px solid var(--border-color)', textAlign: 'right', fontWeight: 'bold', color: 'var(--green-tag-text)'}}>
@@ -351,22 +351,57 @@ const BillingSheet = ({ tasks }) => {
       
       <style>{`
         @media print {
+          @page { 
+            size: landscape; 
+            margin: 10mm;
+          }
           body * { visibility: hidden; }
           .printable-sheet, .printable-sheet * { visibility: visible; }
           .printable-sheet { 
-            position: absolute; 
-            left: 0; 
-            top: 0; 
-            width: 100%;
-            overflow: visible !important;
+            position: absolute !important; 
+            left: 0 !important; 
+            top: 0 !important; 
+            width: 100% !important;
             box-shadow: none !important;
             border: none !important;
+            background: #fff !important;
+            overflow: visible !important;
           }
-          table { width: 100% !important; min-width: 100% !important; border: 1px solid #000 !important; }
-          th, td { border: 1px solid #000 !important; color: #000 !important; }
-          input { border: none !important; color: #000 !important; font-size: 8pt !important; }
-          thead tr { background: #35694f !important; -webkit-print-color-adjust: exact; }
-          .btn, .icon-btn { display: none !important; }
+          table { 
+            width: 100% !important; 
+            min-width: 0 !important; 
+            table-layout: auto !important;
+            font-size: 7.5pt !important;
+            border: 0.5pt solid #000 !important;
+          }
+          th, td { 
+            padding: 4px 2px !important; 
+            border: 0.5pt solid #000 !important; 
+            line-height: 1.1 !important;
+            color: #000 !important;
+          }
+          input { 
+            display: none !important; 
+          }
+          /* Show values instead of inputs in print */
+          td:has(input)::after {
+            content: attr(data-value);
+            display: block;
+            text-align: center;
+          }
+          thead tr { 
+            background: #35694f !important; 
+            color: #fff !important;
+            -webkit-print-color-adjust: exact; 
+          }
+          .btn, .icon-btn, .dashboard-container > header { display: none !important; }
+          
+          /* Visual adjustments for totals */
+          tr[style*="background: #35694f"] {
+            background: #35694f !important;
+            color: #fff !important;
+            -webkit-print-color-adjust: exact;
+          }
         }
       `}</style>
     </div>
