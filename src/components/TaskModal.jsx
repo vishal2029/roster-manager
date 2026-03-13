@@ -20,6 +20,9 @@ const TaskModal = ({ task, mode, onClose, onSave, onDelete }) => {
     if (name === 'deadline' || name === 'submissionDate') {
       processedValue = new Date(value).toISOString();
     }
+    if (name === 'wordCountTarget') {
+      processedValue = parseInt(value) || 0;
+    }
     
     setFormData(prev => ({ 
       ...prev, 
@@ -165,6 +168,7 @@ const TaskModal = ({ task, mode, onClose, onSave, onDelete }) => {
                 >
                   <option value="ChatGPT">ChatGPT</option>
                   <option value="Claude">Claude</option>
+                  <option value="Gemini">Gemini</option>
                   <option value="None">None</option>
                 </select>
               )}
@@ -183,9 +187,9 @@ const TaskModal = ({ task, mode, onClose, onSave, onDelete }) => {
                   onChange={handleChange}
                   className="form-input"
                 >
-                  <option value="Account A">Account A</option>
-                  <option value="Account B">Account B</option>
-                  <option value="Account C">Account C</option>
+                  <option value="@speakvishal4">@speakvishal4</option>
+                  <option value="@vishalgupta.contentwriting">@vishalgupta.contentwriting</option>
+                  <option value="@poemsofvishal">@poemsofvishal</option>
                 </select>
               )}
             </div>

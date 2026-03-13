@@ -13,15 +13,23 @@ const BillingSheet = ({ tasks }) => {
       if (t.type === 'Assignment' && t.isCompleted) {
         flattened.push({
           rowId: t.id,
-          taskRef: t, // Reference to main task for saving
+          taskRef: t,
           isPart: false,
           partIndex: null,
           ticketId: t.ticketId,
           title: t.title,
           format: t.taskFormat || 'Doc',
-          wordCount: t.wordCountTarget || 0,
+          wordCount: parseInt(t.wordCountTarget) || 0,
           submissionDate: new Date(t.submissionDate || t.deadline),
-          billingDetails: t.billingDetails || {
+          billingDetails: t.billingDetails ? {
+            changesReport: parseFloat(t.billingDetails.changesReport) || 0,
+            changesPPT: parseFloat(t.billingDetails.changesPPT) || 0,
+            changesCode: parseFloat(t.billingDetails.changesCode) || 0,
+            dupReport: parseFloat(t.billingDetails.dupReport) || 0,
+            dupPPT: parseFloat(t.billingDetails.dupPPT) || 0,
+            dupCode: parseFloat(t.billingDetails.dupCode) || 0,
+            ppw: parseFloat(t.billingDetails.ppw) || 0.46
+          } : {
             changesReport: 0, changesPPT: 0, changesCode: 0,
             dupReport: 0, dupPPT: 0, dupCode: 0,
             ppw: 0.46
@@ -39,11 +47,19 @@ const BillingSheet = ({ tasks }) => {
                isPart: true,
                partIndex: idx,
                ticketId: t.ticketId,
-               title: `Dissertation - ${p.title}`,
+               title: `${p.title}`,
                format: p.taskFormat || 'Doc',
-               wordCount: p.wordCountTarget || 0,
+               wordCount: parseInt(p.wordCountTarget) || 0,
                submissionDate: new Date(p.deadline),
-               billingDetails: p.billingDetails || {
+               billingDetails: p.billingDetails ? {
+                  changesReport: parseFloat(p.billingDetails.changesReport) || 0,
+                  changesPPT: parseFloat(p.billingDetails.changesPPT) || 0,
+                  changesCode: parseFloat(p.billingDetails.changesCode) || 0,
+                  dupReport: parseFloat(p.billingDetails.dupReport) || 0,
+                  dupPPT: parseFloat(p.billingDetails.dupPPT) || 0,
+                  dupCode: parseFloat(p.billingDetails.dupCode) || 0,
+                  ppw: parseFloat(p.billingDetails.ppw) || 0.46
+               } : {
                   changesReport: 0, changesPPT: 0, changesCode: 0,
                   dupReport: 0, dupPPT: 0, dupCode: 0,
                   ppw: 0.46

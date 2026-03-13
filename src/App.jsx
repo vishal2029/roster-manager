@@ -107,7 +107,7 @@ function App() {
       notes: '',
       taskLink: '',
       aiTool: 'None',
-      linkedAccount: 'Account A',
+      linkedAccount: '@speakvishal4',
       parts: []
     });
   };
