@@ -246,12 +246,12 @@ const BillingSheet = ({ tasks }) => {
 
       {/* Table Section */}
       <div className="printable-sheet" style={{maxWidth: '100%', overflowX: 'auto', background: 'var(--panel-bg)', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px rgba(0,0,0,0.05)'}}>
-        <table style={{width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1600px', fontSize: '0.85rem'}}>
+        <table style={{width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1750px', fontSize: '0.82rem'}}>
           <thead>
             <tr style={{background: '#35694f', color: '#fff', fontSize: '0.75rem', position: 'sticky', top: 0, zIndex: 10, textAlign: 'center'}}>
               <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '60px', verticalAlign: 'middle'}}>S. No.</th>
               <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', minWidth: '150px', verticalAlign: 'middle', textAlign: 'left'}}>Task Name (ID)</th>
-              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', minWidth: '250px', verticalAlign: 'middle', textAlign: 'left'}}>Title/Subtask</th>
+              <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', minWidth: '350px', verticalAlign: 'middle', textAlign: 'left'}}>Title/Subtask</th>
               <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '90px', verticalAlign: 'middle'}}>Report</th>
               <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '90px', verticalAlign: 'middle'}}>PPT</th>
               <th style={{padding: '0.75rem', border: '1px solid rgba(255,255,255,0.2)', width: '100px', verticalAlign: 'middle'}}>Code Eq.</th>

@@ -1,55 +1,137 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc } from 'firebase/firestore';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { db, auth } from './firebase';
 import Calendar from './components/Calendar';
 import GanttChart from './components/GanttChart';
 import TaskModal from './components/TaskModal';
 import BillingSheet from './components/BillingSheet';
 import Login from './components/Login';
-import { Calendar as CalendarIcon, PieChart, Plus, Sun, Moon, LayoutGrid, LogOut } from 'lucide-react';
-import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
-import { db, auth } from './firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { Plus, Calendar as CalIcon, List, BarChart3, Receipt, LogOut, Sun, Moon, Bell } from 'lucide-react';
+import { format } from 'date-fns';
 
 function App() {
   const [tasks, setTasks] = useState([]);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [view, setView] = useState('calendar');
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [viewingTask, setViewingTask] = useState(null);
   const [ganttTask, setGanttTask] = useState(null);
-  const [isDarkMode, setIsDarkMode] = useState(true);
-  const [viewMode, setViewMode] = useState('calendar');
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [user, setUser] = useState(undefined); // undefined = loading, null = logged out
+  const [user, setUser] = useState(null);
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
   // Track auth state
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser ?? null);
+      if (firebaseUser && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
     });
     return () => unsubAuth();
   }, []);
 
-  // Load tasks from Firestore (only when logged in)
-  useEffect(() => {
-    if (!user) return;
+  // Use refs to store state values for the notification timer to avoid dependency loops
+  const tasksRef = useRef([]);
+  const notifiedTasks = useRef(new Set());
+  const seenTaskIds = useRef(new Set());
+  const isInitialLoad = useRef(true);
 
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
+
+  // Task Loading (One-time subscription per user)
+  useEffect(() => {
+    if (!user) {
+      setTasks([]);
+      return;
+    }
 
     const unsubscribe = onSnapshot(collection(db, "tasks"), (snapshot) => {
       const dbTasks = [];
       snapshot.forEach((doc) => {
-        dbTasks.push(doc.data());
+        const data = doc.data();
+        dbTasks.push(data);
+
+        // Notify if it's a new task (not seen before, and not the very first load)
+        if (!isInitialLoad.current && !seenTaskIds.current.has(data.id)) {
+          new Notification("🆕 New Task Added", {
+            body: `${data.title} (${data.type})`,
+            icon: '/v_fav.png'
+          });
+        }
+        seenTaskIds.current.add(data.id);
       });
+      
+      isInitialLoad.current = false;
       setTasks(dbTasks);
-      setGanttTask(prev => prev ? dbTasks.find(t => t.id === prev.id) || null : null);
-      setViewingTask(prev => prev ? dbTasks.find(t => t.id === prev.id) || null : null);
     }, (error) => {
       console.error("Firebase connection error:", error);
     });
 
-    return () => {
-      clearInterval(timer);
-      unsubscribe();
-    };
+    return () => unsubscribe();
+  }, [user]);
+
+  // Periodic Notification Polling & Current Time Update
+  useEffect(() => {
+    if (!user) return;
+
+    const timer = setInterval(() => {
+      const now = new Date();
+      setCurrentTime(now);
+
+      tasksRef.current.forEach(task => {
+        if (task.isCompleted) return;
+        
+        const deadline = new Date(task.deadline);
+        const diffMs = deadline - now;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = diffMs / 3600000;
+        const diffDays = diffMs / 86400000;
+
+        // Assignments: 5 hours before deadline
+        if (task.type === 'Assignment') {
+          if (diffHours > 0 && diffHours <= 5 && !notifiedTasks.current.has(`${task.id}-5h`)) {
+            new Notification("⏳ Assignment Reminder", {
+              body: `"${task.title}" is due in ${Math.round(diffHours)} hours!`,
+              icon: '/v_fav.png'
+            });
+            notifiedTasks.current.add(`${task.id}-5h`);
+          }
+        }
+
+        // Dissertations: 7 days (Yellow) and 3 days (Red)
+        if (task.type === 'Dissertation') {
+          if (diffDays > 3 && diffDays <= 7 && !notifiedTasks.current.has(`${task.id}-7d`)) {
+            new Notification("🟡 Dissertation Warning", {
+              body: `"${task.title}" has 7 days left to reach Yellow status!`,
+              icon: '/v_fav.png'
+            });
+            notifiedTasks.current.add(`${task.id}-7d`);
+          }
+          if (diffDays > 0 && diffDays <= 3 && !notifiedTasks.current.has(`${task.id}-3d`)) {
+            new Notification("🔴 Dissertation Urgent", {
+              body: `"${task.title}" is now in the RED zone (3 days left)!`,
+              icon: '/v_fav.png'
+            });
+            notifiedTasks.current.add(`${task.id}-3d`);
+          }
+        }
+
+        // General Overdue
+        if (diffMins < 0 && !notifiedTasks.current.has(`${task.id}-overdue`)) {
+          new Notification("🚨 Task Overdue!", {
+            body: `"${task.title}" has passed its deadline!`,
+            icon: '/v_fav.png'
+          });
+          notifiedTasks.current.add(`${task.id}-overdue`);
+        }
+      });
+    }, 60000);
+
+    return () => clearInterval(timer);
   }, [user]);
 
   useEffect(() => {
@@ -60,156 +142,140 @@ function App() {
     }
   }, [isDarkMode]);
 
-  const handleTaskSave = async (updatedTask) => {
-    if (!updatedTask.id) {
-      updatedTask.id = Date.now().toString();
+  const toggleTheme = () => setIsDarkMode(!isDarkMode);
+
+  // Sync viewingTask and ganttTask if tasks list changes
+  useEffect(() => {
+    if (viewingTask) {
+      const updated = tasks.find(t => t.id === viewingTask.id);
+      if (updated) setViewingTask(updated);
     }
+    if (ganttTask) {
+      const updated = tasks.find(t => t.id === ganttTask.id);
+      if (updated) setGanttTask(updated);
+    }
+  }, [tasks]);
 
-    setTasks(prev => {
-      const exists = prev.find(t => t.id === updatedTask.id);
-      if (exists) return prev.map(t => t.id === updatedTask.id ? updatedTask : t);
-      return [...prev, updatedTask];
-    });
-
-    setEditingTask(null);
-
+  const addTask = async (taskData) => {
+    const taskId = Math.random().toString(36).substr(2, 9);
+    const newTask = {
+      ...taskData,
+      id: taskId,
+      createdAt: new Date().toISOString()
+    };
+    
     try {
-      await setDoc(doc(db, "tasks", updatedTask.id), updatedTask);
-    } catch (error) {
-      console.error("Error saving to Firebase:", error);
-      alert("Failed to save task to database. Please check your connection.");
+      await setDoc(doc(db, "tasks", taskId), newTask);
+      setIsModalOpen(false);
+    } catch (e) {
+      console.error("Error adding task: ", e);
     }
   };
 
-  const handleTaskDelete = async (taskId) => {
-    if (window.confirm("Are you sure you want to permanently delete this task?")) {
-      setTasks(prev => prev.filter(t => t.id !== taskId));
+  const updateTask = async (taskData) => {
+    try {
+      await setDoc(doc(db, "tasks", taskData.id), taskData);
       setEditingTask(null);
-      setViewingTask(null);
-      if (ganttTask?.id === taskId) setGanttTask(null);
+    } catch (e) {
+      console.error("Error updating task: ", e);
+    }
+  };
 
+  const deleteTask = async (taskId) => {
+    if (window.confirm("Are you sure you want to delete this task?")) {
       try {
         await deleteDoc(doc(db, "tasks", taskId));
-      } catch (error) {
-        console.error("Error deleting from Firebase:", error);
+        setViewingTask(null);
+      } catch (e) {
+        console.error("Error deleting task: ", e);
       }
     }
   };
 
-  const handleCreateTask = () => {
-    setEditingTask({
-      ticketId: '',
-      title: '',
-      type: 'Assignment',
-      taskFormat: 'Doc',
-      deadline: new Date().toISOString(),
-      wordCountTarget: 0,
-      notes: '',
-      taskLink: '',
-      aiTool: 'None',
-      linkedAccount: '@speakvishal4',
-      parts: []
-    });
+  const handleSignOut = () => {
+    signOut(auth);
   };
 
-  // Loading state
-  if (user === undefined) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-color)' }}>
-        <div style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>Loading...</div>
-      </div>
-    );
-  }
-
-  // Not logged in
   if (!user) {
-    return <Login />;
+    return <Login onLogin={() => {}} />;
   }
 
   return (
-    <div className="dashboard-container">
+    <div className="app">
       <header>
-        <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
-          <h1>
-            <CalendarIcon size={24} color="var(--primary-color)" />
-            Academic Task Management
-          </h1>
-        </div>
+        <h1>
+          <CalIcon size={24} /> Task Roster
+        </h1>
         <div style={{display: 'flex', gap: '1rem', alignItems: 'center'}}>
-          <div style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontVariantNumeric: 'tabular-nums', fontWeight: '500'}}>
-            <span style={{color: 'var(--text-primary)', fontSize: '0.9rem'}}>{currentTime.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-            <span style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>{currentTime.toLocaleTimeString()}</span>
+          <div className="view-switcher" style={{display: 'flex', background: 'var(--panel-bg)', borderRadius: '8px', padding: '4px', border: '1px solid var(--border-color)'}}>
+            <button className={`btn icon-btn ${view === 'calendar' ? 'active' : ''}`} onClick={() => setView('calendar')} title="Calendar" style={{padding: '6px 12px', background: view === 'calendar' ? 'var(--panel-hover)' : 'transparent', color: view === 'calendar' ? 'var(--primary-color)' : 'var(--text-secondary)'}}>
+              <CalIcon size={20} />
+            </button>
+
+            <button className={`btn icon-btn ${view === 'gantt' ? 'active' : ''}`} onClick={() => setView('gantt')} title="Gantt Chart" style={{padding: '6px 12px', background: view === 'gantt' ? 'var(--panel-hover)' : 'transparent', color: view === 'gantt' ? 'var(--primary-color)' : 'var(--text-secondary)'}}>
+              <BarChart3 size={20} />
+            </button>
+            <button className={`btn icon-btn ${view === 'billing' ? 'active' : ''}`} onClick={() => setView('billing')} title="Billing Grid" style={{padding: '6px 12px', background: view === 'billing' ? 'var(--panel-hover)' : 'transparent', color: view === 'billing' ? 'var(--primary-color)' : 'var(--text-secondary)'}}>
+              <Receipt size={20} />
+            </button>
           </div>
-          <div style={{background: 'var(--panel-hover)', borderRadius: '8px', padding: '4px', display: 'flex'}}>
-            <button style={{padding: '0.35rem 0.75rem', fontSize: '0.85rem', border: 'none', borderRadius: '6px', cursor: 'pointer', background: viewMode === 'calendar' ? 'var(--primary-color)' : 'transparent', color: viewMode === 'calendar' ? '#fff' : 'var(--text-secondary)'}} onClick={() => setViewMode('calendar')}>Calendar</button>
-            <button style={{padding: '0.35rem 0.75rem', fontSize: '0.85rem', border: 'none', borderRadius: '6px', cursor: 'pointer', background: viewMode === 'billing' ? 'var(--primary-color)' : 'transparent', color: viewMode === 'billing' ? '#fff' : 'var(--text-secondary)'}} onClick={() => setViewMode('billing')}>Billing Grid</button>
-          </div>
-          <button className="btn btn-secondary" onClick={() => setIsDarkMode(!isDarkMode)} aria-label="Toggle Theme" style={{padding: '0.5rem'}}>
-            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+
+          <button className="btn icon-btn" onClick={toggleTheme} title={isDarkMode ? "Light Mode" : "Dark Mode"} style={{padding: '6px', borderRadius: '8px', border: '1px solid var(--border-color)', color: 'var(--text-primary)'}}>
+            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
-          <button className="btn btn-primary" onClick={handleCreateTask} style={{display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem'}}>
+
+          <button className="btn btn-primary" onClick={() => setIsModalOpen(true)} style={{display: 'flex', alignItems: 'center', gap: '4px'}}>
             <Plus size={18} /> Add Task
           </button>
-          <button className="btn btn-secondary" onClick={() => signOut(auth)} title="Sign Out" style={{padding: '0.5rem'}}>
-            <LogOut size={18} />
+
+          <button className="btn btn-secondary" onClick={handleSignOut} style={{display: 'flex', alignItems: 'center', gap: '4px'}}>
+            <LogOut size={18} /> Sign Out
           </button>
         </div>
       </header>
 
-      <main style={{display: 'flex', flexDirection: 'column', gap: '3rem', marginTop: '1rem'}}>
-        {viewMode === 'calendar' ? (
-          <>
-            <section>
-              <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem'}}>
-                <CalendarIcon size={20} color="var(--primary-color)" />
-                <h2 className="section-title" style={{margin: 0}}>Task Calendar</h2>
-              </div>
-              <Calendar
-                currentMonth={currentMonth}
-                onDateChange={setCurrentMonth}
-                tasks={tasks}
-                onTaskClick={setGanttTask}
-                onInfoClick={setViewingTask}
-                onEditClick={setEditingTask}
-              />
-            </section>
+      <main className="dashboard-container">
+        {view === 'calendar' && (
+          <Calendar 
+            tasks={tasks} 
+            onTaskClick={(task) => setViewingTask(task)}
+            currentTime={currentTime}
+          />
+        )}
 
-            {ganttTask && ganttTask.type === 'Dissertation' && ganttTask.parts?.length > 0 && (
-              <section>
-                <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem'}}>
-                  <PieChart size={20} color="var(--yellow-tag-text)" />
-                  <h2 className="section-title" style={{margin: 0}}>Gantt Chart: {ganttTask.title}</h2>
-                </div>
-                <GanttChart task={ganttTask} />
-              </section>
-            )}
-          </>
-        ) : (
-          <section>
-            <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem'}}>
-              <LayoutGrid size={20} color="var(--primary-color)" />
-              <h2 className="section-title" style={{margin: 0}}>Billing Sheet (Completed)</h2>
-            </div>
-            <BillingSheet tasks={tasks} />
-          </section>
+        {view === 'gantt' && (
+          <GanttChart 
+            tasks={tasks} 
+            onTaskClick={(task) => setViewingTask(task)}
+          />
+        )}
+        {view === 'billing' && (
+          <BillingSheet tasks={tasks} />
         )}
       </main>
 
-      {editingTask && (
-        <TaskModal
-          task={editingTask}
-          mode="edit"
-          onClose={() => setEditingTask(null)}
-          onSave={handleTaskSave}
-          onDelete={handleTaskDelete}
-        />
-      )}
-
-      {viewingTask && (
-        <TaskModal
-          task={viewingTask}
-          mode="view"
-          onClose={() => setViewingTask(null)}
+      {(isModalOpen || editingTask || viewingTask) && (
+        <TaskModal 
+          isOpen={true}
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingTask(null);
+            setViewingTask(null);
+          }}
+          onSave={editingTask ? updateTask : addTask}
+          onDelete={deleteTask}
+          onGanttOpen={(task) => {
+            setViewingTask(null);
+            setGanttTask(task);
+            setView('gantt');
+          }}
+          editTask={editingTask || viewingTask}
+          isViewOnly={!!viewingTask && !editingTask}
+          onEdit={() => {
+            setEditingTask(viewingTask);
+            setViewingTask(null);
+          }}
+          currentTime={currentTime}
         />
       )}
     </div>

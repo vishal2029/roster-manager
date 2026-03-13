@@ -69,7 +69,13 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
         const cloneDay = day;
         
         // Find tasks/parts for this day
-        const dayTasks = allItems.filter(item => isSameDay(new Date(item.deadline), cloneDay));
+        const dayTasks = allItems.filter(item => {
+            const deadlineDate = new Date(item.deadline);
+            const subDate = item.submissionDate ? new Date(item.submissionDate) : null;
+            // Use submissionDate if completed, otherwise use deadline
+            const displayDate = (item.isCompleted && subDate) ? subDate : deadlineDate;
+            return isSameDay(displayDate, cloneDay);
+        });
 
         days.push(
           <div
@@ -81,8 +87,17 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
             </div>
             {dayTasks.map(item => {
                 const isPart = item.type === 'Part';
-                const colorClass = `task-${getTaskColorCode(item, isPart ? 'Part' : item.type, new Date())}`;
+                let colorClass = `task-${getTaskColorCode(item, isPart ? 'Part' : item.type, new Date())}`;
                 
+                // Extra check for late completion to apply special styling
+                if (item.isCompleted) {
+                    const deadlineDate = new Date(item.deadline);
+                    const subDate = item.submissionDate ? new Date(item.submissionDate) : deadlineDate;
+                    if (subDate > deadlineDate) {
+                        colorClass = 'task-completed-late';
+                    }
+                }
+
                 let displayTitle = item.title;
                 if (isPart) {
                   const pTicketId = item.parentTask?.ticketId;
@@ -96,6 +111,10 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
                   displayTitle = `${item.ticketId}: ${item.title}`;
                 }
                 
+                const taskDisplayDate = (item.isCompleted && item.submissionDate) 
+                    ? new Date(item.submissionDate) 
+                    : new Date(item.deadline);
+
                 return (
                     <div 
                         key={item.id} 
@@ -125,7 +144,7 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
                             )}
                           </div>
                         </div>
-                        <span className="task-time">{format(new Date(item.deadline), 'h:mm a')}</span>
+                        <span className="task-time">{format(taskDisplayDate, 'h:mm a')}</span>
                     </div>
                 );
             })}
