@@ -3,6 +3,7 @@ import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc } fro
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { db, auth } from './firebase';
 import Calendar from './components/Calendar';
+import Timeline from './components/Timeline';
 import GanttChart from './components/GanttChart';
 import TaskModal from './components/TaskModal';
 import BillingSheet from './components/BillingSheet';
@@ -20,6 +21,7 @@ function App() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [user, setUser] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   // Track auth state
   useEffect(() => {
@@ -211,7 +213,9 @@ function App() {
             <button className={`btn icon-btn ${view === 'calendar' ? 'active' : ''}`} onClick={() => setView('calendar')} title="Calendar" style={{padding: '6px 12px', background: view === 'calendar' ? 'var(--panel-hover)' : 'transparent', color: view === 'calendar' ? 'var(--primary-color)' : 'var(--text-secondary)'}}>
               <CalIcon size={20} />
             </button>
-
+            <button className={`btn icon-btn ${view === 'timeline' ? 'active' : ''}`} onClick={() => setView('timeline')} title="Timeline" style={{padding: '6px 12px', background: view === 'timeline' ? 'var(--panel-hover)' : 'transparent', color: view === 'timeline' ? 'var(--primary-color)' : 'var(--text-secondary)'}}>
+              <List size={20} />
+            </button>
             <button className={`btn icon-btn ${view === 'gantt' ? 'active' : ''}`} onClick={() => setView('gantt')} title="Gantt Chart" style={{padding: '6px 12px', background: view === 'gantt' ? 'var(--panel-hover)' : 'transparent', color: view === 'gantt' ? 'var(--primary-color)' : 'var(--text-secondary)'}}>
               <BarChart3 size={20} />
             </button>
@@ -239,10 +243,19 @@ function App() {
           <Calendar 
             tasks={tasks} 
             onTaskClick={(task) => setViewingTask(task)}
+            onInfoClick={(task) => setViewingTask(task)}
+            onEditClick={(task) => setEditingTask(task)}
+            currentMonth={currentMonth}
+            onDateChange={setCurrentMonth}
             currentTime={currentTime}
           />
         )}
-
+        {view === 'timeline' && (
+          <Timeline 
+            tasks={tasks} 
+            onTaskClick={(task) => setViewingTask(task)} 
+          />
+        )}
         {view === 'gantt' && (
           <GanttChart 
             tasks={tasks} 

@@ -70,11 +70,10 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
         
         // Find tasks/parts for this day
         const dayTasks = allItems.filter(item => {
-            const deadlineDate = new Date(item.deadline);
-            const subDate = item.submissionDate ? new Date(item.submissionDate) : null;
-            // Use submissionDate if completed, otherwise use deadline
-            const displayDate = (item.isCompleted && subDate) ? subDate : deadlineDate;
-            return isSameDay(displayDate, cloneDay);
+          const taskDate = item.isCompleted && item.submissionDate 
+            ? new Date(item.submissionDate) 
+            : new Date(item.deadline);
+          return isSameDay(taskDate, cloneDay);
         });
 
         days.push(
@@ -87,15 +86,20 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
             </div>
             {dayTasks.map(item => {
                 const isPart = item.type === 'Part';
-                let colorClass = `task-${getTaskColorCode(item, isPart ? 'Part' : item.type, new Date())}`;
+                const colorClass = `task-${getTaskColorCode(item, isPart ? 'Part' : item.type, new Date())}`;
                 
-                // Extra check for late completion to apply special styling
-                if (item.isCompleted) {
-                    const deadlineDate = new Date(item.deadline);
-                    const subDate = item.submissionDate ? new Date(item.submissionDate) : deadlineDate;
-                    if (subDate > deadlineDate) {
-                        colorClass = 'task-completed-late';
-                    }
+                // Check for delay (date based comparison)
+                let extraClass = "";
+                if (item.isCompleted && item.submissionDate) {
+                  const sDate = new Date(item.submissionDate);
+                  const dDate = new Date(item.deadline);
+                  
+                  const sDateOnly = new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate());
+                  const dDateOnly = new Date(dDate.getFullYear(), dDate.getMonth(), dDate.getDate());
+                  
+                  if (sDateOnly > dDateOnly) {
+                    extraClass = "task-delayed";
+                  }
                 }
 
                 let displayTitle = item.title;
@@ -111,14 +115,10 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
                   displayTitle = `${item.ticketId}: ${item.title}`;
                 }
                 
-                const taskDisplayDate = (item.isCompleted && item.submissionDate) 
-                    ? new Date(item.submissionDate) 
-                    : new Date(item.deadline);
-
                 return (
                     <div 
                         key={item.id} 
-                        className={`task-chip ${colorClass}`}
+                        className={`task-chip ${colorClass} ${extraClass}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           onTaskClick(isPart ? item.parentTask : item);
@@ -144,7 +144,11 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
                             )}
                           </div>
                         </div>
-                        <span className="task-time">{format(taskDisplayDate, 'h:mm a')}</span>
+                        <span className="task-time">
+                          {item.isCompleted && item.submissionDate 
+                            ? `Done: ${format(new Date(item.submissionDate), 'h:mm a')}` 
+                            : format(new Date(item.deadline), 'h:mm a')}
+                        </span>
                     </div>
                 );
             })}
