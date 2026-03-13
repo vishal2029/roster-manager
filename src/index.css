@@ -298,18 +298,6 @@ header h1 {
   opacity: 0.7;
 }
 
-.task-delayed {
-  background-color: rgba(248, 81, 73, 0.15); /* Slight red tint overlay on panel bg */
-  border-color: var(--red-tag-border);
-  text-decoration: line-through;
-  text-decoration-color: var(--red-tag-text);
-}
-
-.task-delayed p {
-  text-decoration: line-through;
-  text-decoration-color: var(--red-tag-text);
-}
-
 /* Gantt Chart */
 .gantt-container {
   background-color: var(--panel-bg);

@@ -63,18 +63,37 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
       return items;
     });
 
+    // Helper: get the calendar day an item should appear on
+    const getDisplayDay = (item) => {
+      if (item.isCompleted && item.submissionDate) {
+        return new Date(item.submissionDate);
+      }
+      return new Date(item.deadline);
+    };
+
+    // Helper: compare date-only (strips time) for late/early detection
+    const toDateOnly = (d) => {
+      const dt = new Date(d);
+      return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+    };
+
+    // Get submission tint: 'late' | 'early' | 'ontime'
+    const getSubmissionTint = (item) => {
+      if (!item.isCompleted) return null;
+      const subDay = item.submissionDate ? toDateOnly(item.submissionDate) : toDateOnly(item.deadline);
+      const deadlineDay = toDateOnly(item.deadline);
+      if (subDay > deadlineDay) return 'late';
+      if (subDay < deadlineDay) return 'early';
+      return 'ontime';
+    };
+
     while (day <= endDate) {
       for (let i = 0; i < 7; i++) {
         formattedDate = format(day, dateFormat);
         const cloneDay = day;
         
-        // Find tasks/parts for this day
-        const dayTasks = allItems.filter(item => {
-          const taskDate = item.isCompleted && item.submissionDate 
-            ? new Date(item.submissionDate) 
-            : new Date(item.deadline);
-          return isSameDay(taskDate, cloneDay);
-        });
+        // Completed tasks show on submission date; pending tasks show on deadline
+        const dayTasks = allItems.filter(item => isSameDay(getDisplayDay(item), cloneDay));
 
         days.push(
           <div
@@ -87,21 +106,21 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
             {dayTasks.map(item => {
                 const isPart = item.type === 'Part';
                 const colorClass = `task-${getTaskColorCode(item, isPart ? 'Part' : item.type, new Date())}`;
-                
-                // Check for delay (date based comparison)
-                let extraClass = "";
-                if (item.isCompleted && item.submissionDate) {
-                  const sDate = new Date(item.submissionDate);
-                  const dDate = new Date(item.deadline);
-                  
-                  const sDateOnly = new Date(sDate.getFullYear(), sDate.getMonth(), sDate.getDate());
-                  const dDateOnly = new Date(dDate.getFullYear(), dDate.getMonth(), dDate.getDate());
-                  
-                  if (sDateOnly > dDateOnly) {
-                    extraClass = "task-delayed";
+                const tint = getSubmissionTint(item);
+
+                // Extra inline style only for completed tasks with late/early status
+                let chipStyle = {};
+                let textStyle = {};
+                if (item.isCompleted) {
+                  if (tint === 'late') {
+                    chipStyle = { background: 'rgba(248, 81, 73, 0.12)', borderColor: 'rgba(248, 81, 73, 0.35)' };
+                    textStyle = { textDecorationColor: '#ff7b72' };
+                  } else if (tint === 'early') {
+                    chipStyle = { background: 'rgba(46, 160, 67, 0.12)', borderColor: 'rgba(46, 160, 67, 0.35)' };
+                    textStyle = { textDecorationColor: '#56d364' };
                   }
                 }
-
+                
                 let displayTitle = item.title;
                 if (isPart) {
                   const pTicketId = item.parentTask?.ticketId;
@@ -118,14 +137,15 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
                 return (
                     <div 
                         key={item.id} 
-                        className={`task-chip ${colorClass} ${extraClass}`}
+                        className={`task-chip ${colorClass}`}
+                        style={chipStyle}
                         onClick={(e) => {
                           e.stopPropagation();
                           onTaskClick(isPart ? item.parentTask : item);
                         }}
                     >
                         <div className="task-content">
-                          <p title={displayTitle}>{displayTitle}</p>
+                          <p title={displayTitle} style={textStyle}>{displayTitle}</p>
                           <div className="task-actions flex items-center gap-1" onClick={e => e.stopPropagation()}>
                             <button className="icon-btn" onClick={() => onInfoClick(isPart ? item.parentTask : item)} title="Details">
                               <Info size={12} />
@@ -144,11 +164,7 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
                             )}
                           </div>
                         </div>
-                        <span className="task-time">
-                          {item.isCompleted && item.submissionDate 
-                            ? `Done: ${format(new Date(item.submissionDate), 'h:mm a')}` 
-                            : format(new Date(item.deadline), 'h:mm a')}
-                        </span>
+                        <span className="task-time">{format(new Date(item.deadline), 'h:mm a')}</span>
                     </div>
                 );
             })}
