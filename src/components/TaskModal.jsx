@@ -10,7 +10,7 @@ const TaskModal = ({ task, mode, onClose, onSave, onDelete }) => {
     ...task,
     parts: task.parts || [],
     isCompleted: task.isCompleted || false,
-    submissionDate: task.submissionDate || new Date().toISOString()
+    submissionDate: task.submissionDate || task.deadline || new Date().toISOString()
   });
 
   const handleChange = (e) => {
@@ -39,7 +39,14 @@ const TaskModal = ({ task, mode, onClose, onSave, onDelete }) => {
   const addPart = () => {
     setFormData(prev => ({
       ...prev,
-      parts: [...prev.parts, { id: Date.now().toString(), title: '', deadline: new Date().toISOString(), isCompleted: false, wordCountTarget: 0 }]
+      parts: [...prev.parts, { 
+        id: Date.now().toString(), 
+        title: '', 
+        deadline: new Date().toISOString(), 
+        isCompleted: false, 
+        wordCountTarget: 0,
+        submissionDate: new Date().toISOString()
+      }]
     }));
   };
 
@@ -132,7 +139,21 @@ const TaskModal = ({ task, mode, onClose, onSave, onDelete }) => {
                </label>
                {formData.isCompleted && (
                   <div style={{marginTop: '0.75rem'}}>
-                    <label style={{fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem'}}>Actual Submission / Completion Time (Optional)</label>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem'}}>
+                      <label style={{fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block'}}>Actual Submission / Completion Time</label>
+                      <label style={{fontSize: '0.75rem', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', fontWeight: '500'}}>
+                        <input 
+                          type="checkbox" 
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData(prev => ({...prev, submissionDate: new Date().toISOString()}));
+                            }
+                          }}
+                          style={{width: '14px', height: '14px'}}
+                        />
+                        Set to Now
+                      </label>
+                    </div>
                     <input type="datetime-local" name="submissionDate" value={format(new Date(formData.submissionDate), "yyyy-MM-dd'T'HH:mm")} onChange={handleChange} className="form-input" style={{width: '100%'}}/>
                   </div>
                )}
@@ -266,10 +287,15 @@ const TaskModal = ({ task, mode, onClose, onSave, onDelete }) => {
                            <span style={{color: 'var(--text-secondary)'}}>{format(new Date(part.deadline), 'MMM d, yyyy')}</span>
                          </div>
                          {part.wordCountTarget > 0 && (
-                           <div style={{fontSize: '0.75rem', color: 'var(--text-secondary)', paddingLeft: part.isCompleted ? '22px' : '0'}}>
-                             Word Target: {part.wordCountTarget} ({part.taskFormat || 'Doc'})
-                           </div>
-                         )}
+                            <div style={{fontSize: '0.75rem', color: 'var(--text-secondary)', paddingLeft: part.isCompleted ? '22px' : '0'}}>
+                              Word Target: {part.wordCountTarget} ({part.taskFormat || 'Doc'})
+                              {part.isCompleted && (
+                                <span style={{marginLeft: '1rem', color: 'var(--text-secondary)'}}>
+                                  Submitted: {format(new Date(part.submissionDate || part.deadline), 'MMM d, h:mm a')}
+                                </span>
+                              )}
+                            </div>
+                          )}
                        </div>
                     ) : (
                        <div style={{display: 'flex', gap: '0.5rem', flex: 1, flexDirection: 'column', background: 'var(--panel-hover)', padding: '0.5rem', borderRadius: '6px'}}>
@@ -295,6 +321,31 @@ const TaskModal = ({ task, mode, onClose, onSave, onDelete }) => {
                            <label style={{fontSize: '0.75rem', color: 'var(--text-secondary)', marginLeft: '0.5rem'}}>Word Target:</label>
                            <input type="number" className="form-input" style={{width: '90px', padding: '0.25rem 0.5rem', fontSize: '0.85rem'}} value={part.wordCountTarget || 0} onChange={e => handlePartChange(i, 'wordCountTarget', parseInt(e.target.value) || 0)} />
                          </div>
+
+                         {part.isCompleted && (
+                            <div style={{display: 'flex', gap: '0.5rem', width: '100%', alignItems: 'center', paddingLeft: '24px', marginTop: '0.25rem'}}>
+                              <label style={{fontSize: '0.75rem', color: 'var(--text-secondary)'}}>Submission:</label>
+                              <input 
+                                type="datetime-local" 
+                                className="form-input" 
+                                style={{flex: 1, padding: '0.25rem', fontSize: '0.85rem'}} 
+                                value={format(new Date(part.submissionDate || part.deadline), "yyyy-MM-dd'T'HH:mm")} 
+                                onChange={e => handlePartChange(i, 'submissionDate', new Date(e.target.value).toISOString())} 
+                              />
+                              <label style={{fontSize: '0.7rem', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer', fontWeight: '500'}}>
+                                <input 
+                                  type="checkbox" 
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      handlePartChange(i, 'submissionDate', new Date().toISOString());
+                                    }
+                                  }}
+                                  style={{width: '12px', height: '12px'}}
+                                />
+                                Now
+                              </label>
+                            </div>
+                          )}
                        </div>
                      )}
                   </div>
