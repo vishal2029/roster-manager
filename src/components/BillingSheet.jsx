@@ -1,71 +1,79 @@
 import React, { useState, useEffect } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Download, FileText, Printer } from 'lucide-react';
+import { Download, FileText, Printer, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, addMonths, subMonths, isSameMonth } from 'date-fns';
 
 const BillingSheet = ({ tasks }) => {
   const [billingData, setBillingData] = useState([]);
+  const [filterMonth, setFilterMonth] = useState(new Date());
   
-  // Flatten and prepare completed tasks
+  // Flatten, prepare and filter completed tasks by selected month
   useEffect(() => {
     const flattened = [];
     tasks.forEach(t => {
       // For Assignments
       if (t.type === 'Assignment' && t.isCompleted) {
-        flattened.push({
-          rowId: t.id,
-          taskRef: t,
-          isPart: false,
-          partIndex: null,
-          ticketId: t.ticketId,
-          title: t.title,
-          format: t.taskFormat || 'Doc',
-          wordCount: parseInt(t.wordCountTarget) || 0,
-          submissionDate: new Date(t.submissionDate || t.deadline),
-          billingDetails: t.billingDetails ? {
-            changesReport: parseFloat(t.billingDetails.changesReport) || 0,
-            changesPPT: parseFloat(t.billingDetails.changesPPT) || 0,
-            changesCode: parseFloat(t.billingDetails.changesCode) || 0,
-            dupReport: parseFloat(t.billingDetails.dupReport) || 0,
-            dupPPT: parseFloat(t.billingDetails.dupPPT) || 0,
-            dupCode: parseFloat(t.billingDetails.dupCode) || 0,
-            ppw: parseFloat(t.billingDetails.ppw) || 0.46
-          } : {
-            changesReport: 0, changesPPT: 0, changesCode: 0,
-            dupReport: 0, dupPPT: 0, dupCode: 0,
-            ppw: 0.46
-          }
-        });
+        const subDate = new Date(t.submissionDate || t.deadline);
+        if (isSameMonth(subDate, filterMonth)) {
+          flattened.push({
+            rowId: t.id,
+            taskRef: t,
+            isPart: false,
+            partIndex: null,
+            ticketId: t.ticketId,
+            title: t.title,
+            format: t.taskFormat || 'Doc',
+            wordCount: parseInt(t.wordCountTarget) || 0,
+            submissionDate: subDate,
+            billingDetails: t.billingDetails ? {
+              changesReport: parseFloat(t.billingDetails.changesReport) || 0,
+              changesPPT: parseFloat(t.billingDetails.changesPPT) || 0,
+              changesCode: parseFloat(t.billingDetails.changesCode) || 0,
+              dupReport: parseFloat(t.billingDetails.dupReport) || 0,
+              dupPPT: parseFloat(t.billingDetails.dupPPT) || 0,
+              dupCode: parseFloat(t.billingDetails.dupCode) || 0,
+              ppw: parseFloat(t.billingDetails.ppw) || 0.46
+            } : {
+              changesReport: 0, changesPPT: 0, changesCode: 0,
+              dupReport: 0, dupPPT: 0, dupCode: 0,
+              ppw: 0.46
+            }
+          });
+        }
       }
       
       // For Dissertations
       if (t.type === 'Dissertation' && t.parts && t.parts.length > 0) {
         t.parts.forEach((p, idx) => {
           if (p.isCompleted) {
-            flattened.push({
-               rowId: p.id || `${t.id}-part-${idx}`,
-               taskRef: t,
-               isPart: true,
-               partIndex: idx,
-               ticketId: t.ticketId,
-               title: `${p.title}`,
-               format: p.taskFormat || 'Doc',
-               wordCount: parseInt(p.wordCountTarget) || 0,
-               submissionDate: new Date(p.submissionDate || p.deadline),
-               billingDetails: p.billingDetails ? {
-                  changesReport: parseFloat(p.billingDetails.changesReport) || 0,
-                  changesPPT: parseFloat(p.billingDetails.changesPPT) || 0,
-                  changesCode: parseFloat(p.billingDetails.changesCode) || 0,
-                  dupReport: parseFloat(p.billingDetails.dupReport) || 0,
-                  dupPPT: parseFloat(p.billingDetails.dupPPT) || 0,
-                  dupCode: parseFloat(p.billingDetails.dupCode) || 0,
-                  ppw: parseFloat(p.billingDetails.ppw) || 0.46
-               } : {
-                  changesReport: 0, changesPPT: 0, changesCode: 0,
-                  dupReport: 0, dupPPT: 0, dupCode: 0,
-                  ppw: 0.46
-               }
-            });
+            const subDate = new Date(p.submissionDate || p.deadline);
+            if (isSameMonth(subDate, filterMonth)) {
+              flattened.push({
+                 rowId: p.id || `${t.id}-part-${idx}`,
+                 taskRef: t,
+                 isPart: true,
+                 partIndex: idx,
+                 ticketId: t.ticketId,
+                 title: `${p.title}`,
+                 format: p.taskFormat || 'Doc',
+                 wordCount: parseInt(p.wordCountTarget) || 0,
+                 submissionDate: subDate,
+                 billingDetails: p.billingDetails ? {
+                    changesReport: parseFloat(p.billingDetails.changesReport) || 0,
+                    changesPPT: parseFloat(p.billingDetails.changesPPT) || 0,
+                    changesCode: parseFloat(p.billingDetails.changesCode) || 0,
+                    dupReport: parseFloat(p.billingDetails.dupReport) || 0,
+                    dupPPT: parseFloat(p.billingDetails.dupPPT) || 0,
+                    dupCode: parseFloat(p.billingDetails.dupCode) || 0,
+                    ppw: parseFloat(p.billingDetails.ppw) || 0.46
+                 } : {
+                    changesReport: 0, changesPPT: 0, changesCode: 0,
+                    dupReport: 0, dupPPT: 0, dupCode: 0,
+                    ppw: 0.46
+                 }
+              });
+            }
           }
         });
       }
@@ -73,7 +81,7 @@ const BillingSheet = ({ tasks }) => {
 
     flattened.sort((a, b) => a.submissionDate - b.submissionDate);
     setBillingData(flattened);
-  }, [tasks]);
+  }, [tasks, filterMonth]);
 
   const handleBillingChange = async (rowId, field, value) => {
     const updatedData = [...billingData];
@@ -115,6 +123,24 @@ const BillingSheet = ({ tasks }) => {
       const ppw = row.billingDetails.ppw !== undefined ? row.billingDetails.ppw : 0.46;
       return acc + (words * ppw);
     }, 0);
+  };
+
+  // Month navigation
+  const nextMonth = () => {
+    const next = addMonths(filterMonth, 1);
+    const now = new Date();
+    if (next <= endOfMonth(now)) {
+      setFilterMonth(next);
+    }
+  };
+
+  const prevMonth = () => {
+    setFilterMonth(subMonths(filterMonth, 1));
+  };
+
+  const handleMonthChange = (e) => {
+    const [year, month] = e.target.value.split('-');
+    setFilterMonth(new Date(year, month - 1, 1));
   };
 
   const downloadCSV = () => {
@@ -162,27 +188,63 @@ const BillingSheet = ({ tasks }) => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `Billing_Sheet_${new Date().toISOString().slice(0, 7)}.csv`);
+    link.setAttribute("download", `Billing_Sheet_${format(filterMonth, 'yyyy-MM')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  const printSheet = () => {
-    window.print();
-  };
-
   return (
-    <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
-      <div style={{display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginBottom: '0.5rem'}}>
-        <button onClick={downloadCSV} className="btn btn-secondary" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.85rem'}}>
-          <Download size={16} /> Download CSV
-        </button>
-        <button onClick={printSheet} className="btn btn-secondary" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.85rem'}}>
-          <Printer size={16} /> Print / Save PDF
-        </button>
+    <div style={{display: 'flex', flexDirection: 'column', gap: '1.25rem'}}>
+      {/* Month Selector Controls */}
+      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--panel-bg)', padding: '0.75rem 1.25rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 2px 4px rgba(0,0,0,0.02)'}}>
+        <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+          <div style={{display: 'flex', gap: '0.25rem'}}>
+            <button onClick={prevMonth} className="icon-btn" style={{padding: '0.4rem', background: 'var(--panel-hover)', borderRadius: '6px'}} title="Previous Month">
+              <ChevronLeft size={18} />
+            </button>
+            <button onClick={nextMonth} className="icon-btn" style={{padding: '0.4rem', background: 'var(--panel-hover)', borderRadius: '6px', opacity: addMonths(filterMonth, 1) > endOfMonth(new Date()) ? 0.4 : 1, cursor: addMonths(filterMonth, 1) > endOfMonth(new Date()) ? 'not-allowed' : 'pointer'}} title="Next Month">
+              <ChevronRight size={18} />
+            </button>
+          </div>
+          <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
+             <h3 style={{margin: 0, fontSize: '1.1rem', fontWeight: '700', color: 'var(--text-primary)', minWidth: '160px', textAlign: 'center'}}>
+               {format(filterMonth, 'MMMM yyyy')}
+             </h3>
+             <div style={{position: 'relative', display: 'flex', alignItems: 'center'}}>
+               <CalendarIcon size={16} style={{position: 'absolute', left: '10px', color: 'var(--primary-color)', pointerEvents: 'none'}} />
+               <input 
+                 type="month" 
+                 value={format(filterMonth, 'yyyy-MM')} 
+                 onChange={handleMonthChange}
+                 max={format(new Date(), 'yyyy-MM')}
+                 style={{
+                   padding: '0.4rem 0.75rem 0.4rem 2.25rem',
+                   fontSize: '0.85rem',
+                   borderRadius: '6px',
+                   border: '1px solid var(--border-color)',
+                   background: 'var(--bg-color)',
+                   color: 'var(--text-primary)',
+                   cursor: 'pointer',
+                   outline: 'none',
+                   fontFamily: 'inherit'
+                 }}
+               />
+             </div>
+          </div>
+        </div>
+
+        <div style={{display: 'flex', gap: '0.75rem'}}>
+          <button onClick={downloadCSV} className="btn btn-secondary" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.85rem'}}>
+            <Download size={16} /> Download CSV
+          </button>
+          <button onClick={() => window.print()} className="btn btn-secondary" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.85rem'}}>
+            <Printer size={16} /> PDF / Print
+          </button>
+        </div>
       </div>
 
+      {/* Table Section */}
       <div className="printable-sheet" style={{maxWidth: '100%', overflowX: 'auto', background: 'var(--panel-bg)', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px rgba(0,0,0,0.05)'}}>
         <table style={{width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '1600px', fontSize: '0.85rem'}}>
           <thead>
@@ -207,7 +269,10 @@ const BillingSheet = ({ tasks }) => {
           <tbody>
             {billingData.length === 0 ? (
               <tr>
-                <td colSpan="15" style={{padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)'}}>No completed tasks to bill yet.</td>
+                <td colSpan="15" style={{padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)'}}>
+                  <FileText size={48} style={{opacity: 0.2, marginBottom: '1rem'}} /><br/>
+                  No billing entries for {format(filterMonth, 'MMMM yyyy')}.
+                </td>
               </tr>
             ) : (
               <>
@@ -225,7 +290,6 @@ const BillingSheet = ({ tasks }) => {
                     background: 'transparent',
                     textAlign: 'center', 
                     color: 'var(--text-primary)',
-                    transition: 'all 0.2s ease',
                     outline: 'none',
                     borderRadius: '4px'
                   };
@@ -295,12 +359,14 @@ const BillingSheet = ({ tasks }) => {
             top: 0; 
             width: 100%;
             overflow: visible !important;
+            box-shadow: none !important;
+            border: none !important;
           }
           table { width: 100% !important; min-width: 100% !important; border: 1px solid #000 !important; }
           th, td { border: 1px solid #000 !important; color: #000 !important; }
-          input { border: none !important; color: #000 !important; }
+          input { border: none !important; color: #000 !important; font-size: 8pt !important; }
           thead tr { background: #35694f !important; -webkit-print-color-adjust: exact; }
-          .btn { display: none !important; }
+          .btn, .icon-btn { display: none !important; }
         }
       `}</style>
     </div>
