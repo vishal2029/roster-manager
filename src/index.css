@@ -227,50 +227,71 @@ header h1 {
 
 @media (max-width: 480px) {
   .main-header { padding: 0.75rem 1rem; }
-  .header-right { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+  .header-right { flex-direction: column; align-items: stretch; gap: 1rem; }
+  .view-switcher { margin: 0 auto; width: fit-content; }
   .header-actions { justify-content: space-between; }
   
+  /* Mobile Calendar: We switch to a horizontal scroll or tight grid */
   .calendar-grid-wrapper {
-    overflow-x: hidden;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     width: 100%;
   }
   
-  .calendar-grid, .calendar-header {
-    min-width: 100%;
-    grid-template-columns: repeat(7, 1fr);
+  .calendar-header-cell { 
+    font-size: 0.65rem; 
+    padding: 0.5rem 0; 
+    font-weight: 700;
   }
-
-  .calendar-header-cell {
-    font-size: 0.65rem;
-    padding: 0.25rem 0;
+  
+  .calendar-header-cell .full-day { display: none; }
+  .calendar-header-cell .short-day { display: inline; }
+  
+  .calendar-day { 
+    min-height: 60px; 
+    padding: 1px;
+    gap: 1px;
+  }
+  
+  .day-number { 
+    font-size: 0.75rem; 
+    width: 20px; 
+    height: 20px;
+    margin-bottom: 2px;
     font-weight: 600;
   }
 
-  .calendar-day {
-    min-height: 85px;
-    padding: 4px 2px;
+  .task-chip { 
+    padding: 1px 2px !important; 
+    border-radius: 2px !important;
+    white-space: nowrap !important;
+    word-break: normal !important;
+    word-wrap: normal !important;
+    overflow: hidden !important;
+    min-width: 0;
+  }
+  
+  .task-chip .task-content {
+    display: block !important; /* Switch from flex to block to prevent inner wrapping */
+    width: 100%;
   }
 
-  .day-number {
-    font-size: 0.7rem;
-    margin-bottom: 2px;
+  .task-chip p { 
+    font-size: 8px !important; 
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    word-break: normal !important;
+    word-wrap: normal !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: block !important;
+    -webkit-line-clamp: none !important;
+    margin: 0 !important;
   }
+  
+  .task-actions, .task-time { display: none !important; }
 
-  .task-chip {
-    padding: 2px 4px;
-    border-radius: 3px;
-    margin-bottom: 1px;
-  }
-
-  .task-chip p {
-    font-size: 0.6rem;
-    line-height: 1.1;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-  }
-
-  .section-title { font-size: 1.1rem; }
-
+  /* Hide Gantt Chart on Mobile as per user request */
   .gantt-section {
     display: none !important;
   }
@@ -348,6 +369,10 @@ header h1 {
 
 .calendar-day:hover:not(.empty) {
   background-color: var(--panel-bg);
+}
+
+.short-day {
+  display: none;
 }
 
 /* Task chips */

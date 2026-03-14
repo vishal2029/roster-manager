@@ -26,13 +26,14 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
   const renderDays = () => {
     const days = [];
     const startDate = startOfWeek(currentMonth);
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 480;
-    
     for (let i = 0; i < 7; i++) {
-        const date = addDays(startDate, i);
+        const day = addDays(startDate, i);
+        const fullDay = format(day, 'EEEE');
+        const shortDay = format(day, 'EEEEE'); // Single letter 'S', 'M', etc.
         days.push(
             <div className="calendar-header-cell" key={i}>
-                {format(date, isMobile ? 'EEEEE' : 'EEEE')}
+                <span className="full-day">{fullDay}</span>
+                <span className="short-day">{shortDay}</span>
             </div>
         );
     }
@@ -131,16 +132,22 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
                 }
                 
                 let displayTitle = item.title;
+                const isMobileView = window.innerWidth < 768;
+
                 if (isPart) {
                   const pTicketId = item.parentTask?.ticketId;
                   const pType = item.parentTask?.type;
-                  if (pTicketId) {
+                  if (isMobileView && pTicketId) {
+                    displayTitle = pTicketId;
+                  } else if (pTicketId) {
                     displayTitle = `${pTicketId}: ${pType} - ${item.title}`;
                   } else {
                     displayTitle = `• ${item.title}`;
                   }
                 } else if (item.ticketId) {
-                  displayTitle = `${item.ticketId}: ${item.title}`;
+                  displayTitle = isMobileView ? item.ticketId : `${item.ticketId}: ${item.title}`;
+                } else if (isMobileView) {
+                  displayTitle = item.title.slice(0, 8) + '..';
                 }
                 
                 return (
