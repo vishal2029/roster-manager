@@ -147,7 +147,11 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
                         style={chipStyle}
                         onClick={(e) => {
                           e.stopPropagation();
-                          onTaskClick(isPart ? item.parentTask : item);
+                          if (window.innerWidth < 768) {
+                            onInfoClick(isPart ? item.parentTask : item);
+                          } else {
+                            onTaskClick(isPart ? item.parentTask : item);
+                          }
                         }}
                     >
                         <div className="task-content">

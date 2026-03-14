@@ -242,6 +242,11 @@ header h1 {
   }
   
   .section-title { font-size: 1.1rem; }
+
+  /* Hide Gantt Chart on Mobile as per user request */
+  .gantt-section {
+    display: none !important;
+  }
 }
 
 /* Calendar styling */

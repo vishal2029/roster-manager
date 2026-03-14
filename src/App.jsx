@@ -249,7 +249,7 @@ function App() {
             </section>
 
             {ganttTask && ganttTask.type === 'Dissertation' && ganttTask.parts?.length > 0 && (
-              <section>
+              <section className="gantt-section">
                 <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem'}}>
                   <PieChart size={20} color="var(--yellow-tag-text)" />
                   <h2 className="section-title" style={{margin: 0}}>Gantt Chart: {ganttTask.title}</h2>
