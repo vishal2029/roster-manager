@@ -5,6 +5,21 @@ import { ChevronLeft, ChevronRight, Info, Edit2, ExternalLink, Search, X } from 
 
 const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick, onEditClick, searchQuery, setSearchQuery }) => {
   const [isSearchExpanded, setIsSearchExpanded] = React.useState(false);
+  const searchRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setIsSearchExpanded(false);
+      }
+    };
+    if (isSearchExpanded) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSearchExpanded]);
   const nextMonth = () => onDateChange(addDays(currentMonth, 31)); // Simple next
   const prevMonth = () => onDateChange(addDays(currentMonth, -31)); // Simple prev
 
@@ -14,7 +29,7 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
         <h2 className="section-title">{format(currentMonth, 'MMMM yyyy')}</h2>
         
         <div className="calendar-actions-group">
-          <div className={`calendar-search-wrapper ${isSearchExpanded ? 'expanded' : ''}`}>
+          <div className={`calendar-search-wrapper ${isSearchExpanded ? 'expanded' : ''}`} ref={searchRef}>
             <button 
               className="btn btn-secondary mobile-search-toggle" 
               onClick={() => setIsSearchExpanded(!isSearchExpanded)}
@@ -187,6 +202,7 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
                         onClick={(e) => {
                           e.stopPropagation();
                           if (window.innerWidth < 768) {
+                            setIsSearchExpanded(false); // Close search on mobile when opening modal
                             onInfoClick(isPart ? item.parentTask : item);
                           } else {
                             onTaskClick(isPart ? item.parentTask : item);

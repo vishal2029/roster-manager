@@ -724,7 +724,7 @@ header h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 1100;
   opacity: 0;
   animation: fadeIn 0.2s forwards;
 }
