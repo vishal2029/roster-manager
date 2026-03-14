@@ -4,7 +4,7 @@ import GanttChart from './components/GanttChart';
 import TaskModal from './components/TaskModal';
 import BillingSheet from './components/BillingSheet';
 import Login from './components/Login';
-import { Calendar as CalendarIcon, PieChart, Plus, Sun, Moon, LayoutGrid, LogOut } from 'lucide-react';
+import { Calendar as CalendarIcon, PieChart, Plus, Sun, Moon, LayoutGrid, LogOut, Search, X } from 'lucide-react';
 import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -19,6 +19,7 @@ function App() {
   const [viewMode, setViewMode] = useState('calendar');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [user, setUser] = useState(undefined); // undefined = loading, null = logged out
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Track auth state
   useEffect(() => {
@@ -184,6 +185,16 @@ function App() {
     });
   };
 
+  const filteredTasks = tasks.filter(task => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      task.title?.toLowerCase().includes(query) ||
+      task.ticketId?.toLowerCase().includes(query) ||
+      task.notes?.toLowerCase().includes(query)
+    );
+  });
+
   // Loading state
   if (user === undefined) {
     return (
@@ -216,6 +227,21 @@ function App() {
             <button className={viewMode === 'calendar' ? 'active' : ''} onClick={() => setViewMode('calendar')}>Calendar</button>
             <button className={viewMode === 'billing' ? 'active' : ''} onClick={() => setViewMode('billing')}>Billing Grid</button>
           </div>
+          <div className="search-wrapper">
+            <Search size={16} className="search-icon" />
+            <input 
+              type="text" 
+              placeholder="Search by ID or title..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+            {searchQuery && (
+              <button className="search-clear" onClick={() => setSearchQuery('')}>
+                <X size={14} />
+              </button>
+            )}
+          </div>
           <div className="header-actions">
             <button className="btn btn-secondary theme-toggle" onClick={() => setIsDarkMode(!isDarkMode)} aria-label="Toggle Theme">
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
@@ -241,7 +267,7 @@ function App() {
               <Calendar
                 currentMonth={currentMonth}
                 onDateChange={setCurrentMonth}
-                tasks={tasks}
+                tasks={filteredTasks}
                 onTaskClick={setGanttTask}
                 onInfoClick={setViewingTask}
                 onEditClick={setEditingTask}
@@ -264,7 +290,7 @@ function App() {
               <LayoutGrid size={20} color="var(--primary-color)" />
               <h2 className="section-title" style={{margin: 0}}>Billing Sheet (Completed)</h2>
             </div>
-            <BillingSheet tasks={tasks} />
+            <BillingSheet tasks={filteredTasks} />
           </section>
         )}
       </main>
