@@ -35,15 +35,18 @@ function App() {
   const notifiedTasks = React.useRef(new Set());
   const seenTaskIds = React.useRef(new Set());
   const isInitialLoad = React.useRef(true);
+  const tasksRef = React.useRef([]); // For use inside interval
 
   useEffect(() => {
     if (!user) return;
 
+    // Separate interval for notifications (only depends on user login)
     const timer = setInterval(() => {
       const now = new Date();
       setCurrentTime(now);
 
-      tasks.forEach(task => {
+      const currentTasks = tasksRef.current;
+      currentTasks.forEach(task => {
         if (task.isCompleted) return;
         
         const deadline = new Date(task.deadline);
@@ -65,7 +68,6 @@ function App() {
 
         // Dissertations: 7 days (Yellow) and 3 days (Red)
         if (task.type === 'Dissertation') {
-          // 7 Day Yellow Alert
           if (diffDays > 3 && diffDays <= 7 && !notifiedTasks.current.has(`${task.id}-7d`)) {
             new Notification("🟡 Dissertation Warning", {
               body: `"${task.title}" has 7 days left to reach Yellow status!`,
@@ -73,7 +75,6 @@ function App() {
             });
             notifiedTasks.current.add(`${task.id}-7d`);
           }
-          // 3 Day Red Alert
           if (diffDays > 0 && diffDays <= 3 && !notifiedTasks.current.has(`${task.id}-3d`)) {
             new Notification("🔴 Dissertation Urgent", {
               body: `"${task.title}" is now in the RED zone (3 days left)!`,
@@ -83,7 +84,6 @@ function App() {
           }
         }
 
-        // General Overdue
         if (diffMins < 0 && !notifiedTasks.current.has(`${task.id}-overdue`)) {
           new Notification("🚨 Task Overdue!", {
             body: `"${task.title}" has passed its deadline!`,
@@ -100,7 +100,6 @@ function App() {
         const data = doc.data();
         dbTasks.push(data);
 
-        // Notify if it's a new task (not seen before, and not the very first load of app)
         if (!isInitialLoad.current && !seenTaskIds.current.has(data.id)) {
           new Notification("🆕 New Task Added", {
             body: `${data.title} (${data.type})`,
@@ -111,6 +110,7 @@ function App() {
       });
       
       isInitialLoad.current = false;
+      tasksRef.current = dbTasks; // Update ref for the interval
       setTasks(dbTasks);
       setGanttTask(prev => prev ? dbTasks.find(t => t.id === prev.id) || null : null);
       setViewingTask(prev => prev ? dbTasks.find(t => t.id === prev.id) || null : null);
@@ -122,7 +122,7 @@ function App() {
       clearInterval(timer);
       unsubscribe();
     };
-  }, [user, tasks]);
+  }, [user]);
 
   useEffect(() => {
     if (isDarkMode) {
