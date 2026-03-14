@@ -44,25 +44,25 @@ body.light-theme {
   --border-color: #e5e7eb;
   --empty-day-bg: #fbfbfb;
   
-  --red-tag: rgba(207, 34, 46, 0.2);
-  --red-tag-border: rgba(207, 34, 46, 0.5);
-  --red-tag-text: #cf222e;
+  --red-tag: rgba(220, 30, 40, 0.4);
+  --red-tag-border: rgba(220, 30, 40, 0.7);
+  --red-tag-text: #b6000d;
   
-  --yellow-tag: rgba(154, 103, 0, 0.2);
-  --yellow-tag-border: rgba(154, 103, 0, 0.5);
-  --yellow-tag-text: #9a6700;
+  --yellow-tag: rgba(255, 190, 0, 0.45);
+  --yellow-tag-border: rgba(255, 190, 0, 0.8);
+  --yellow-tag-text: #8c5b00;
   
-  --green-tag: rgba(26, 127, 55, 0.2);
-  --green-tag-border: rgba(26, 127, 55, 0.5);
-  --green-tag-text: #1a7f37;
+  --green-tag: rgba(30, 160, 60, 0.4);
+  --green-tag-border: rgba(30, 160, 60, 0.7);
+  --green-tag-text: #1a6027;
   
-  --purple-tag: rgba(130, 80, 223, 0.2);
-  --purple-tag-border: rgba(130, 80, 223, 0.5);
-  --purple-tag-text: #8250df;
+  --purple-tag: rgba(140, 50, 240, 0.4);
+  --purple-tag-border: rgba(140, 50, 240, 0.7);
+  --purple-tag-text: #601fa6;
   
-  --gray-tag: rgba(87, 96, 106, 0.2);
-  --gray-tag-border: rgba(87, 96, 106, 0.5);
-  --gray-tag-text: #57606a;
+  --gray-tag: rgba(100, 110, 120, 0.3);
+  --gray-tag-border: rgba(100, 110, 120, 0.6);
+  --gray-tag-text: #444d56;
 
   --primary-color: #0969da;
   --primary-hover: #0349b4;
