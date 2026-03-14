@@ -26,10 +26,13 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
   const renderDays = () => {
     const days = [];
     const startDate = startOfWeek(currentMonth);
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 480;
+    
     for (let i = 0; i < 7; i++) {
+        const date = addDays(startDate, i);
         days.push(
             <div className="calendar-header-cell" key={i}>
-                {format(addDays(startDate, i), 'EEEE')}
+                {format(date, isMobile ? 'EEEEE' : 'EEEE')}
             </div>
         );
     }
