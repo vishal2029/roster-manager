@@ -227,21 +227,6 @@ function App() {
             <button className={viewMode === 'calendar' ? 'active' : ''} onClick={() => setViewMode('calendar')}>Calendar</button>
             <button className={viewMode === 'billing' ? 'active' : ''} onClick={() => setViewMode('billing')}>Billing Grid</button>
           </div>
-          <div className="search-wrapper">
-            <Search size={16} className="search-icon" />
-            <input 
-              type="text" 
-              placeholder="Search by ID or title..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-            />
-            {searchQuery && (
-              <button className="search-clear" onClick={() => setSearchQuery('')}>
-                <X size={14} />
-              </button>
-            )}
-          </div>
           <div className="header-actions">
             <button className="btn btn-secondary theme-toggle" onClick={() => setIsDarkMode(!isDarkMode)} aria-label="Toggle Theme">
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
@@ -271,6 +256,8 @@ function App() {
                 onTaskClick={setGanttTask}
                 onInfoClick={setViewingTask}
                 onEditClick={setEditingTask}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
               />
             </section>
 

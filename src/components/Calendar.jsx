@@ -1,23 +1,52 @@
 import React from 'react';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isSameDay, addDays } from 'date-fns';
 import { getTaskColorCode } from '../utils/data';
-import { ChevronLeft, ChevronRight, Info, Edit2, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Info, Edit2, ExternalLink, Search, X } from 'lucide-react';
 
-const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick, onEditClick }) => {
+const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick, onEditClick, searchQuery, setSearchQuery }) => {
+  const [isSearchExpanded, setIsSearchExpanded] = React.useState(false);
   const nextMonth = () => onDateChange(addDays(currentMonth, 31)); // Simple next
   const prevMonth = () => onDateChange(addDays(currentMonth, -31)); // Simple prev
 
   const renderHeader = () => {
     return (
-      <div className="flex justify-between items-center mb-4" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
-        <h2 className="section-title" style={{margin: 0}}>{format(currentMonth, 'MMMM yyyy')}</h2>
-        <div style={{display: 'flex', gap: '0.5rem'}}>
-          <button className="btn btn-secondary" onClick={prevMonth} aria-label="Previous Month">
-            <ChevronLeft size={18} />
-          </button>
-          <button className="btn btn-secondary" onClick={nextMonth} aria-label="Next Month">
-            <ChevronRight size={18} />
-          </button>
+      <div className="calendar-controls-container">
+        <h2 className="section-title">{format(currentMonth, 'MMMM yyyy')}</h2>
+        
+        <div className="calendar-actions-group">
+          <div className={`calendar-search-wrapper ${isSearchExpanded ? 'expanded' : ''}`}>
+            <button 
+              className="btn btn-secondary mobile-search-toggle" 
+              onClick={() => setIsSearchExpanded(!isSearchExpanded)}
+              aria-label="Toggle Search"
+            >
+              <Search size={18} />
+            </button>
+            <div className="search-input-group">
+              <Search size={16} className="search-icon-inner" />
+              <input 
+                type="text" 
+                placeholder="Search ID or Title..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="calendar-search-input"
+              />
+              {searchQuery && (
+                <button className="search-clear-btn" onClick={() => setSearchQuery('')}>
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="month-nav-buttons">
+            <button className="btn btn-secondary" onClick={prevMonth} aria-label="Previous Month">
+              <ChevronLeft size={18} />
+            </button>
+            <button className="btn btn-secondary" onClick={nextMonth} aria-label="Next Month">
+              <ChevronRight size={18} />
+            </button>
+          </div>
         </div>
       </div>
     );

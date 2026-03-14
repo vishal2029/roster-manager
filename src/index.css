@@ -181,14 +181,33 @@ header h1 {
   color: white;
 }
 
-.search-wrapper {
+.calendar-controls-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.calendar-actions-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.calendar-search-wrapper {
   position: relative;
   display: flex;
   align-items: center;
-  min-width: 280px;
 }
 
-.search-icon {
+.search-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon-inner {
   position: absolute;
   left: 10px;
   color: var(--text-secondary);
@@ -196,8 +215,8 @@ header h1 {
   opacity: 0.7;
 }
 
-.search-input {
-  width: 100%;
+.calendar-search-input {
+  width: 250px;
   padding: 0.5rem 0.75rem 0.5rem 2.25rem;
   font-size: 0.85rem;
   background: var(--bg-color);
@@ -207,14 +226,14 @@ header h1 {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.search-input:focus {
+.calendar-search-input:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15);
   background: var(--panel-bg);
 }
 
-.search-clear {
+.search-clear-btn {
   position: absolute;
   right: 8px;
   background: transparent;
@@ -229,9 +248,18 @@ header h1 {
   transition: all 0.2s;
 }
 
-.search-clear:hover {
+.search-clear-btn:hover {
   background: var(--panel-hover);
   color: var(--text-primary);
+}
+
+.month-nav-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.mobile-search-toggle {
+  display: none;
 }
 
 .header-actions {
@@ -255,11 +283,73 @@ header h1 {
 @media (max-width: 992px) {
   .main-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
   .header-right { width: 100%; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
-  .search-wrapper { order: 10; width: 100%; min-width: auto; }
   .calendar-day { min-height: 100px; }
 }
 
 @media (max-width: 768px) {
+  .calendar-controls-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    text-align: center;
+  }
+  
+  .calendar-actions-group {
+    flex-direction: column; /* Stack search above buttons */
+    align-items: center;
+    width: 100%;
+    gap: 1rem;
+  }
+  
+  .calendar-search-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    order: -1; /* Ensure search is visually first in the group */
+  }
+
+  .mobile-search-toggle {
+    display: flex;
+    padding: 0.6rem;
+    border-radius: 50%;
+    background: var(--panel-hover);
+  }
+  
+  .search-input-group {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    padding: 8px;
+    width: calc(100vw - 32px);
+    max-width: 340px;
+  }
+  
+  .calendar-search-wrapper.expanded .search-input-group {
+    display: flex;
+    animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  @keyframes slideDown {
+    from { opacity: 0; transform: translate(-50%, -20px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+  }
+
+  .calendar-search-input {
+    width: 100%;
+    font-size: 16px !important; /* Prevents auto-zoom on iOS */
+    padding: 0.75rem 0.75rem 0.75rem 2.5rem !important;
+  }
+  
+  .search-icon-inner {
+    left: 16px !important;
+  }
   .header-left h1 span { font-size: 1.1rem; }
   .time-display { display: none; }
   .header-right { gap: 0.75rem; }
@@ -340,6 +430,7 @@ header h1 {
     text-overflow: ellipsis !important;
     display: block !important;
     -webkit-line-clamp: none !important;
+    line-clamp: none !important;
     margin: 0 !important;
   }
   
