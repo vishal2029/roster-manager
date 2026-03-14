@@ -191,7 +191,7 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
   return (
     <div className="calendar-container">
       {renderHeader()}
-      <div style={{display: 'flex', flexDirection: 'column'}}>
+      <div className="calendar-grid-wrapper" style={{display: 'flex', flexDirection: 'column'}}>
         {renderDays()}
         {renderCells()}
       </div>

@@ -118,11 +118,130 @@ header h1 {
   width: 100%;
 }
 
-.section-title {
-  font-size: 1.5rem;
-  font-weight: 500;
+/* Header Refinement */
+.main-header {
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-left h1 {
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   color: var(--text-primary);
-  margin-bottom: 1.5rem;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.time-display {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+
+.date-str { font-size: 0.85rem; color: var(--text-primary); }
+.time-str { font-size: 0.8rem; color: var(--text-secondary); }
+
+.view-switcher {
+  display: flex;
+  background: var(--panel-hover);
+  padding: 3px;
+  border-radius: 8px;
+}
+
+.view-switcher button {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.view-switcher button.active {
+  background: var(--primary-color);
+  color: white;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+/* Responsive Overrides */
+@media (max-width: 1200px) {
+  .dashboard-container { padding: 1.5rem 1rem; }
+}
+
+@media (max-width: 992px) {
+  .main-header { flex-direction: column; align-items: flex-start; }
+  .header-right { width: 100%; justify-content: space-between; }
+  .calendar-day { min-height: 100px; }
+}
+
+@media (max-width: 768px) {
+  .header-left h1 span { font-size: 1.1rem; }
+  .time-display { display: none; }
+  .header-right { gap: 0.75rem; }
+  .btn-text { display: none; }
+  .add-btn { padding: 0.5rem !important; }
+  
+  .calendar-header-cell { font-size: 0.7rem; padding: 0.5rem 0.25rem; }
+  .calendar-day { min-height: 80px; padding: 0.25rem; }
+  .day-number { font-size: 0.75rem; width: 20px; height: 20px; }
+  
+  .task-chip { padding: 0.25rem; }
+  .task-chip p { -webkit-line-clamp: 2; line-clamp: 2; font-size: 0.7rem; }
+  .task-time { display: none; }
+  
+  .modal-content { width: 95%; max-height: 90vh; overflow-y: auto; }
+  .modal-body { padding: 1rem; }
+  .modal-footer { padding: 1rem; }
+}
+
+@media (max-width: 480px) {
+  .main-header { padding: 0.75rem 1rem; }
+  .header-right { flex-direction: column; align-items: stretch; gap: 1rem; }
+  .header-actions { justify-content: space-between; }
+  
+  /* Mobile Calendar: We switch to a horizontal scroll or tight grid */
+  .calendar-grid-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+  
+  .calendar-grid, .calendar-header {
+    min-width: 600px; /* Small enough to not be too wide but big enough for 7 columns */
+  }
+  
+  .section-title { font-size: 1.1rem; }
 }
 
 /* Calendar styling */

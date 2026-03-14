@@ -200,31 +200,33 @@ function App() {
 
   return (
     <div className="dashboard-container">
-      <header>
-        <div style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+      <header className="main-header">
+        <div className="header-left">
           <h1>
             <CalendarIcon size={24} color="var(--primary-color)" />
-            Academic Task Management
+            <span>Academic Task Management</span>
           </h1>
         </div>
-        <div style={{display: 'flex', gap: '1rem', alignItems: 'center'}}>
-          <div style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontVariantNumeric: 'tabular-nums', fontWeight: '500'}}>
-            <span style={{color: 'var(--text-primary)', fontSize: '0.9rem'}}>{currentTime.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-            <span style={{color: 'var(--text-secondary)', fontSize: '0.85rem'}}>{currentTime.toLocaleTimeString()}</span>
+        <div className="header-right">
+          <div className="time-display">
+            <span className="date-str">{currentTime.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+            <span className="time-str">{currentTime.toLocaleTimeString()}</span>
           </div>
-          <div style={{background: 'var(--panel-hover)', borderRadius: '8px', padding: '4px', display: 'flex'}}>
-            <button style={{padding: '0.35rem 0.75rem', fontSize: '0.85rem', border: 'none', borderRadius: '6px', cursor: 'pointer', background: viewMode === 'calendar' ? 'var(--primary-color)' : 'transparent', color: viewMode === 'calendar' ? '#fff' : 'var(--text-secondary)'}} onClick={() => setViewMode('calendar')}>Calendar</button>
-            <button style={{padding: '0.35rem 0.75rem', fontSize: '0.85rem', border: 'none', borderRadius: '6px', cursor: 'pointer', background: viewMode === 'billing' ? 'var(--primary-color)' : 'transparent', color: viewMode === 'billing' ? '#fff' : 'var(--text-secondary)'}} onClick={() => setViewMode('billing')}>Billing Grid</button>
+          <div className="view-switcher">
+            <button className={viewMode === 'calendar' ? 'active' : ''} onClick={() => setViewMode('calendar')}>Calendar</button>
+            <button className={viewMode === 'billing' ? 'active' : ''} onClick={() => setViewMode('billing')}>Billing Grid</button>
           </div>
-          <button className="btn btn-secondary" onClick={() => setIsDarkMode(!isDarkMode)} aria-label="Toggle Theme" style={{padding: '0.5rem'}}>
-            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-          <button className="btn btn-primary" onClick={handleCreateTask} style={{display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem'}}>
-            <Plus size={18} /> Add Task
-          </button>
-          <button className="btn btn-secondary" onClick={() => signOut(auth)} title="Sign Out" style={{padding: '0.5rem'}}>
-            <LogOut size={18} />
-          </button>
+          <div className="header-actions">
+            <button className="btn btn-secondary theme-toggle" onClick={() => setIsDarkMode(!isDarkMode)} aria-label="Toggle Theme">
+              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <button className="btn btn-primary add-btn" onClick={handleCreateTask}>
+              <Plus size={18} /> <span className="btn-text">Add Task</span>
+            </button>
+            <button className="btn btn-secondary logout-btn" onClick={() => signOut(auth)} title="Sign Out">
+              <LogOut size={18} />
+            </button>
+          </div>
         </div>
       </header>
 
