@@ -71,6 +71,14 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
       return new Date(item.deadline);
     };
 
+    // Optimization: Group tasks by date first so we don't filter in every cell
+    const tasksByDay = allItems.reduce((acc, item) => {
+      const dateKey = format(getDisplayDay(item), 'yyyy-MM-dd');
+      if (!acc[dateKey]) acc[dateKey] = [];
+      acc[dateKey].push(item);
+      return acc;
+    }, {});
+
     // Helper: compare date-only (strips time) for late/early detection
     const toDateOnly = (d) => {
       const dt = new Date(d);
@@ -90,10 +98,8 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
     while (day <= endDate) {
       for (let i = 0; i < 7; i++) {
         formattedDate = format(day, dateFormat);
-        const cloneDay = day;
-        
-        // Completed tasks show on submission date; pending tasks show on deadline
-        const dayTasks = allItems.filter(item => isSameDay(getDisplayDay(item), cloneDay));
+        const dateKey = format(day, 'yyyy-MM-dd');
+        const dayTasks = tasksByDay[dateKey] || [];
 
         days.push(
           <div
