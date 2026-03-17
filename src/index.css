@@ -442,6 +442,12 @@ header h1 {
   }
 }
 
+/* Special Dissertation & Sub-tasks Differentiation */
+.task-chip.special-dissertation {
+  border: 1.5px solid var(--primary-color) !important;
+  font-weight: 600 !important;
+}
+
 /* Calendar styling */
 .calendar-grid {
   display: grid;

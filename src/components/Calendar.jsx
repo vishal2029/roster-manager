@@ -194,10 +194,12 @@ const Calendar = ({ currentMonth, onDateChange, tasks, onTaskClick, onInfoClick,
                   displayTitle = item.title.slice(0, 8) + '..';
                 }
                 
+                const isDissertation = item.type === 'Dissertation' || item.parentTask?.type === 'Dissertation';
+                
                 return (
                     <div 
                         key={item.id} 
-                        className={`task-chip ${colorClass}`}
+                        className={`task-chip ${colorClass} ${isDissertation ? 'special-dissertation' : ''}`}
                         style={chipStyle}
                         onClick={(e) => {
                           e.stopPropagation();
