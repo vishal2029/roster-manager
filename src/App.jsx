@@ -4,10 +4,11 @@ import GanttChart from './components/GanttChart';
 import TaskModal from './components/TaskModal';
 import BillingSheet from './components/BillingSheet';
 import Login from './components/Login';
-import { Calendar as CalendarIcon, PieChart, Plus, Sun, Moon, LayoutGrid, LogOut, Search, X } from 'lucide-react';
-import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { Calendar as CalendarIcon, History, PieChart, Plus, Sun, Moon, LayoutGrid, LogOut, Search, X } from 'lucide-react';
+import { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
+import HistoryModal from './components/HistoryModal';
 
 function App() {
   const [tasks, setTasks] = useState([]);
@@ -20,6 +21,7 @@ function App() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [user, setUser] = useState(undefined); // undefined = loading, null = logged out
   const [searchQuery, setSearchQuery] = useState('');
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   // Track auth state
   useEffect(() => {
@@ -100,18 +102,11 @@ function App() {
       snapshot.forEach((doc) => {
         const data = doc.data();
         dbTasks.push(data);
-
-        if (!isInitialLoad.current && !seenTaskIds.current.has(data.id)) {
-          new Notification("🆕 New Task Added", {
-            body: `${data.title} (${data.type})`,
-            icon: '/v_fav.png'
-          });
-        }
         seenTaskIds.current.add(data.id);
       });
       
       isInitialLoad.current = false;
-      tasksRef.current = dbTasks; // Update ref for the interval
+      tasksRef.current = dbTasks;
       setTasks(dbTasks);
       setGanttTask(prev => prev ? dbTasks.find(t => t.id === prev.id) || null : null);
       setViewingTask(prev => prev ? dbTasks.find(t => t.id === prev.id) || null : null);
@@ -155,16 +150,49 @@ function App() {
   };
 
   const handleTaskDelete = async (taskId) => {
-    if (window.confirm("Are you sure you want to permanently delete this task?")) {
-      setTasks(prev => prev.filter(t => t.id !== taskId));
+    try {
+      const taskRef = doc(db, "tasks", taskId);
+      await updateDoc(taskRef, { 
+        deleted: true, 
+        deletedAt: new Date().toISOString() 
+      });
       setEditingTask(null);
       setViewingTask(null);
-      if (ganttTask?.id === taskId) setGanttTask(null);
+    } catch (error) {
+      console.error("Error soft-deleting from Firebase:", error);
+    }
+  };
 
+  const handleRestoreTask = async (taskId) => {
+    try {
+      const taskRef = doc(db, "tasks", taskId);
+      await updateDoc(taskRef, { 
+        deleted: false,
+        deletedAt: null 
+      });
+    } catch (error) {
+      console.error("Error restoring task:", error);
+    }
+  };
+
+  const handlePermanentDelete = async (taskId) => {
+    if (window.confirm("Permanently delete this task from history?")) {
       try {
         await deleteDoc(doc(db, "tasks", taskId));
       } catch (error) {
-        console.error("Error deleting from Firebase:", error);
+        console.error("Error deleting permanently:", error);
+      }
+    }
+  };
+
+  const handleClearHistory = async (deletedTasksArray) => {
+    if (window.confirm(`Clear all ${deletedTasksArray.length} tasks from history?`)) {
+      try {
+        const deletePromises = deletedTasksArray.map(t => deleteDoc(doc(db, "tasks", t.id)));
+        await Promise.all(deletePromises);
+        setIsHistoryOpen(false);
+      } catch (error) {
+        console.error("Error clearing history:", error);
       }
     }
   };
@@ -228,6 +256,9 @@ function App() {
             <button className={viewMode === 'billing' ? 'active' : ''} onClick={() => setViewMode('billing')}>Billing Grid</button>
           </div>
           <div className="header-actions">
+            <button className="btn btn-secondary history-btn" onClick={() => setIsHistoryOpen(true)} title="View Deleted History">
+              <History size={18} />
+            </button>
             <button className="btn btn-secondary theme-toggle" onClick={() => setIsDarkMode(!isDarkMode)} aria-label="Toggle Theme">
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
@@ -252,7 +283,7 @@ function App() {
               <Calendar
                 currentMonth={currentMonth}
                 onDateChange={setCurrentMonth}
-                tasks={filteredTasks}
+                tasks={filteredTasks.filter(t => !t.deleted)}
                 onTaskClick={setGanttTask}
                 onInfoClick={setViewingTask}
                 onEditClick={setEditingTask}
@@ -277,7 +308,7 @@ function App() {
               <LayoutGrid size={20} color="var(--primary-color)" />
               <h2 className="section-title" style={{margin: 0}}>Billing Sheet (Completed)</h2>
             </div>
-            <BillingSheet tasks={filteredTasks} />
+            <BillingSheet tasks={filteredTasks.filter(t => !t.deleted)} />
           </section>
         )}
       </main>
@@ -297,6 +328,16 @@ function App() {
           task={viewingTask}
           mode="view"
           onClose={() => setViewingTask(null)}
+        />
+      )}
+
+      {isHistoryOpen && (
+        <HistoryModal 
+          tasks={tasks.filter(t => t.deleted)}
+          onClose={() => setIsHistoryOpen(false)}
+          onRestore={handleRestoreTask}
+          onPermanentDelete={handlePermanentDelete}
+          onClearHistory={() => handleClearHistory(tasks.filter(t => t.deleted))}
         />
       )}
     </div>

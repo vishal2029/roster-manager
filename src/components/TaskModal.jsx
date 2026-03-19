@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Clock, Target, FileText, Bot, User, Plus, Trash2, CheckCircle, ExternalLink } from 'lucide-react';
+import { X, Clock, Target, FileText, Bot, User, Plus, Trash2, CheckCircle, ExternalLink, RefreshCcw } from 'lucide-react';
 import { format } from 'date-fns';
 import { getTaskColorCode } from '../utils/data';
 
@@ -51,8 +51,34 @@ const TaskModal = ({ task, mode, onClose, onSave, onDelete }) => {
   };
 
   const removePart = (index) => {
+    const partToRemove = formData.parts[index];
     const newParts = formData.parts.filter((_, i) => i !== index);
-    setFormData(prev => ({ ...prev, parts: newParts }));
+    setFormData(prev => ({ 
+      ...prev, 
+      parts: newParts,
+      deletedParts: [...(prev.deletedParts || []), { ...partToRemove, deletedAt: new Date().toISOString() }]
+    }));
+  };
+
+  const restorePart = (id) => {
+    const partToRestore = (formData.deletedParts || []).find(p => p.id === id);
+    if (!partToRestore) return;
+    const newDeletedParts = formData.deletedParts.filter(p => p.id !== id);
+    
+    // Clean up deletion-specific metadata when restoring
+    const { deletedAt, ...restoredPart } = partToRestore;
+    
+    setFormData(prev => ({
+      ...prev,
+      parts: [...prev.parts, restoredPart],
+      deletedParts: newDeletedParts
+    }));
+  };
+
+  const clearDeletedParts = () => {
+    if (window.confirm("Permanently clear deletion history for this task's chapters?")) {
+      setFormData(prev => ({ ...prev, deletedParts: [] }));
+    }
   };
 
   const colorCode = getTaskColorCode(formData, formData.type, new Date());
@@ -352,6 +378,37 @@ const TaskModal = ({ task, mode, onClose, onSave, onDelete }) => {
                 ))}
                 {formData.parts.length === 0 && <span style={{fontSize: '0.85rem', color: 'var(--text-secondary)'}}>No parts added.</span>}
               </div>
+
+              {/* Sub-task Deletion History (Only for Dissertation Type) */}
+              {!isView && formData.deletedParts && formData.deletedParts.length > 0 && (
+                <div style={{marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px dashed var(--border-color)'}}>
+                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', position: 'sticky', top: 0, background: 'var(--panel-bg)', zIndex: 5}}>
+                    <span style={{fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em'}}>Recently Deleted Chapters</span>
+                    <button type="button" className="btn btn-secondary" style={{padding: '0.2rem 0.4rem', fontSize: '0.7rem', color: 'var(--red-tag-text)'}} onClick={clearDeletedParts}>Clear List</button>
+                  </div>
+                  <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
+                    {formData.deletedParts.map(part => (
+                      <div key={part.id} style={{padding: '0.75rem', borderRadius: '8px', background: 'var(--panel-hover)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid var(--border-color)'}}>
+                        <div style={{display: 'flex', flexDirection: 'column', gap: '2px'}}>
+                          <span style={{fontSize: '0.85rem', color: 'var(--text-secondary)', opacity: 0.8}}>{part.title || '(Untitled Chapter)'}</span>
+                          <span style={{fontSize: '0.65rem', color: 'var(--text-secondary)', opacity: 0.6}}>
+                            Deleted: {format(new Date(part.deletedAt), 'MMM d, h:mm a')}
+                          </span>
+                        </div>
+                        <button 
+                          type="button" 
+                          className="restore-btn" 
+                          style={{padding: '0.4rem', borderRadius: '4px', cursor: 'pointer', background: 'rgba(46, 160, 67, 0.1)', border: 'none', color: 'var(--green-tag-text)', display: 'flex', alignItems: 'center', justifyContent: 'center'}} 
+                          onClick={() => restorePart(part.id)}
+                          title="Restore chapter"
+                        >
+                          <RefreshCcw size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
