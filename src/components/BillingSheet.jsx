@@ -3,6 +3,8 @@ import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Download, FileText, Printer, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, isSameMonth } from 'date-fns';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 const BillingSheet = ({ tasks }) => {
   const [billingData, setBillingData] = useState([]);
@@ -143,55 +145,122 @@ const BillingSheet = ({ tasks }) => {
     setFilterMonth(new Date(year, month - 1, 1));
   };
 
-  const downloadCSV = () => {
-    const headers = [
-      "S. No.", "Task Name (Task ID)", "Task Name / Subtask Name", "Report", "PPT", "Code", 
-      "Changes - Report", "Changes - PPT", "Changes - Code", 
-      "Duplicate - Report", "Duplicate - PPT", "Duplicate - Code", 
-      "TOTAL Effort", "PPW", "Amount"
+  const downloadExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Billing Sheet');
+
+    sheet.columns = [
+      { header: 'S. No.', key: 'sNo', width: 10 },
+      { header: 'Task Name (Task ID)', key: 'taskId', width: 30 },
+      { header: 'Title/Subtask', key: 'taskName', width: 60 },
+      { header: 'Report', key: 'report', width: 12 },
+      { header: 'PPT', key: 'ppt', width: 12 },
+      { header: 'Code Eq.', key: 'code', width: 12 },
+      { header: 'Chg - Rep', key: 'chgRep', width: 15 },
+      { header: 'Chg - PPT', key: 'chgPpt', width: 15 },
+      { header: 'Chg - Code', key: 'chgCode', width: 15 },
+      { header: 'Dup - Rep', key: 'dupRep', width: 15 },
+      { header: 'Dup - PPT', key: 'dupPpt', width: 15 },
+      { header: 'Dup - Code', key: 'dupCode', width: 15 },
+      { header: 'TOTAL', key: 'total', width: 15 },
+      { header: 'PPW', key: 'ppw', width: 12 },
+      { header: 'Amount', key: 'amount', width: 18 }
     ];
 
-    const rows = billingData.map((row, index) => {
+    const headerRow = sheet.getRow(1);
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF35694F' }
+      };
+      cell.font = {
+        color: { argb: 'FFFFFFFF' },
+        bold: true,
+        size: 13
+      };
+      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+
+    billingData.forEach((row, index) => {
       const bd = row.billingDetails;
       const words = calculateTotalWords(row);
       const ppw = bd.ppw !== undefined ? bd.ppw : 0.46;
       const amount = words * ppw;
       
-      return [
-        index + 1,
-        `"${row.ticketId || ''}"`,
-        `"${row.title}"`,
-        row.format === 'Doc' ? row.wordCount : 0,
-        row.format === 'PPT' ? row.wordCount : 0,
-        row.format === 'Code' ? row.wordCount : 0,
-        bd.changesReport || 0,
-        bd.changesPPT || 0,
-        bd.changesCode || 0,
-        bd.dupReport || 0,
-        bd.dupPPT || 0,
-        bd.dupCode || 0,
-        words,
-        ppw,
-        amount.toFixed(2)
-      ];
+      const newRow = sheet.addRow({
+        sNo: index + 1,
+        taskId: row.ticketId || '-',
+        taskName: row.title,
+        report: row.format === 'Doc' ? row.wordCount : 0,
+        ppt: row.format === 'PPT' ? row.wordCount : 0,
+        code: row.format === 'Code' ? row.wordCount : 0,
+        chgRep: bd.changesReport || 0,
+        chgPpt: bd.changesPPT || 0,
+        chgCode: bd.changesCode || 0,
+        dupRep: bd.dupReport || 0,
+        dupPpt: bd.dupPPT || 0,
+        dupCode: bd.dupCode || 0,
+        total: words,
+        ppw: ppw,
+        amount: parseFloat(amount.toFixed(2))
+      });
+      
+      newRow.eachCell((cell, colNumber) => {
+        cell.border = {
+          top: { style: 'thin' }, left: { style: 'thin' },
+          bottom: { style: 'thin' }, right: { style: 'thin' }
+        };
+        
+        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+        cell.font = { size: 13 };
+        
+        if (colNumber === 15) {
+          cell.font = { color: { argb: 'FF15803D' }, bold: true, size: 13 };
+          cell.numFmt = '₹#,##0.00';
+        } else if (colNumber === 13) {
+          cell.font = { bold: true, size: 13 };
+        }
+      });
     });
 
-    const totalRow = [
-      "", "", "", "", "", "", "", "", "", "", "", "", "GRAND TOTAL", "", calculateGrandTotal().toFixed(2)
-    ];
+    const grandTotalRow = sheet.addRow({
+      dupCode: 'GRAND TOTAL',
+      total: billingData.reduce((acc, row) => acc + calculateTotalWords(row), 0),
+      amount: parseFloat(calculateGrandTotal().toFixed(2))
+    });
 
-    const csvContent = [headers, ...rows, totalRow]
-      .map(e => e.join(","))
-      .join("\n");
+    grandTotalRow.eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF35694F' }
+      };
+      cell.font = { color: { argb: 'FFFFFFFF' }, bold: true, size: 13 };
+      cell.border = {
+        top: { style: 'thin' }, left: { style: 'thin' },
+        bottom: { style: 'thin' }, right: { style: 'thin' }
+      };
+      
+      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      if (cell._column.key === 'amount') {
+          cell.numFmt = '₹#,##0.00';
+      } else if (cell._column.key === 'dupCode') {
+          cell.alignment = { vertical: 'middle', horizontal: 'right', wrapText: true };
+      }
+    });
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Billing_Sheet_${format(filterMonth, 'yyyy-MM')}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    sheet.mergeCells(`A${grandTotalRow.number}:L${grandTotalRow.number}`);
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, `Billing_Sheet_${format(filterMonth, 'yyyy-MM')}.xlsx`);
   };
 
   return (
@@ -235,8 +304,8 @@ const BillingSheet = ({ tasks }) => {
         </div>
 
         <div style={{display: 'flex', gap: '0.75rem'}}>
-          <button onClick={downloadCSV} className="btn btn-secondary" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.85rem'}}>
-            <Download size={16} /> Download CSV
+          <button onClick={downloadExcel} className="btn btn-secondary" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.85rem'}}>
+            <Download size={16} /> Download Excel
           </button>
           <button onClick={() => window.print()} className="btn btn-secondary" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.85rem'}}>
             <Printer size={16} /> PDF / Print
